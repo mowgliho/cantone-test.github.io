@@ -14,7 +14,7 @@ class TestManager {
 
   classes = {
     intro: Intro,
-    pcpt_mando: null,
+    pcpt_mando: PcptMando,
     pcpt_canto: null,
     mic_test: null,
     task_intro: null,
@@ -31,6 +31,19 @@ class TestManager {
     this.state = null;
     this.share = new Shared();
     this.audio = new AudioFiles();
+    this.getId();
+  }
+
+  getId() {
+    const that = this;
+
+    fetch(Config.getIdCgi, { method: 'GET'}).then(
+      (response) => {response.text().then(function(x) {
+        const id = x.slice(0,x.length-1);
+        that.share.save('id',id);
+        console.log('id: ' + id);
+      })}).catch(
+      (error) => {console.log("error", error)});
   }
 
   next() {
@@ -50,6 +63,7 @@ class TestManager {
     }
     if(next) {
       this.div.innerHTML = '';
+      if(this.classes[this.state] == null) return;
       let cl = new this.classes[this.state](this, this.doc, this.div, this.audio, this.share);
       cl.start();
     }

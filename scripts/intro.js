@@ -11,14 +11,12 @@ class Intro {
 
     this.manager = manager;
     //intro
-    let label = doc.create('label', "Thanks for taking part in the Cantone experiment! For this experiment, you will need to be able to hear audio and create audio.")
-    div.appendChild(label);
-    div.appendChild(doc.create('hr'));
+    let label = doc.create('label', "Thanks for taking part in the Cantone experiment! For this experiment, you will need to be able to hear audio and create audio.", div)
+    doc.create('hr',null,div);
 
     //audio check
-    label = doc.create('label', 'First, let\'s check your audio. When you click on the following button, you should hear some audio corresponding to someone saying "Hello" in Cantonese: ');
-    div.appendChild(label);
-    const audioButton = doc.create('button', 'Play!');
+    doc.create('label', 'First, let\'s check your audio. When you click on the following button, you should hear some audio corresponding to someone saying "Hello" in Cantonese: ', div);
+    const audioButton = doc.create('button', 'Play!',div);
     audioButton.onclick = function() {
       audioButton.disabled = true;
       let a = audio.hello();
@@ -27,30 +25,23 @@ class Intro {
       }
       a.play();
     }
-    div.appendChild(audioButton);
-    div.appendChild(doc.create('hr'));
+    doc.create('hr',null,div);
 
     //mic check
-    label = doc.create('label', 'Now, let\'s check your microphone. Click the button, allow access to your microphone, and say "Hello" with ' + this.micDuration + ' seconds. You should see numbers appear to the right in ');
-    div.appendChild(label);
-    let colorLabel = doc.create('label', this.micColor);
+    doc.create('label', 'Now, let\'s check your microphone. Click the button, allow access to your microphone, and say "Hello" with ' + this.micDuration + ' seconds. You should see numbers appear to the right in ',div);
+    let colorLabel = doc.create('label', this.micColor, div);
     colorLabel.style.color = this.micColor;
-    div.appendChild(colorLabel);
-    label = doc.create('label', ': ');
-    div.appendChild(label);
-    this.micButton = doc.create('button','Record');
-    div.appendChild(this.micButton);
+    doc.create('label', ': ', div);
+    this.micButton = doc.create('button','Record', div);
     this.micButton.onclick = getAudioStream(function(audioContext, stream) {that.record(audioContext,stream)});
-    this.micLabel = doc.create('label','');
+    this.micLabel = doc.create('label','', div);
     this.micLabel.style.color = this.micColor;
-    div.appendChild(this.micLabel);
-    div.appendChild(doc.create('hr'));
+    doc.create('hr',null,div);
 
     //next
-    this.nextButton = doc.create('button','Move on to next step!');
+    this.nextButton = doc.create('button','Move on to next step!', div);
     this.nextButton.style.display = 'none';
     this.nextButton.onclick = function() {manager.next();};
-    div.appendChild(this.nextButton);
   }
 
   ready() {
