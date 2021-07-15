@@ -31,7 +31,7 @@ class TestManager {
     this.state = null;
     this.share = new Shared();
     this.audio = new AudioFiles();
-    this.getId();
+    if(this.share.get('id') == null) this.getId();
   }
 
   getId() {

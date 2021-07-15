@@ -1,14 +1,31 @@
 class Shared {
+
   constructor() {
-    this.stuff = {};
+    this.stuff = this.loadCache();
     this.timeouts = [];
   }
 
   save(key,value) {
     this.stuff[key] = value;
+    this.saveCache();
+  }
+
+  loadCache() {
+    let ret = {};
+    for(const key of Object.keys(localStorage)) {
+      ret[key] = localStorage.getItem(key);
+    }
+    return ret;
+  }
+
+  saveCache() {
+    for(const [key,val] of Object.entries(this.stuff)) {
+      localStorage.setItem(key, val);
+    }
   }
 
   get(key) {
+    if(!Object.keys(this.stuff).includes(key)) return null;
     return this.stuff[key];
   }
 
