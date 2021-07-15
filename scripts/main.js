@@ -1,6 +1,7 @@
 class TestManager {
   flow = [
     'intro',
+    'questionnaire',
     'pcpt_mando',
     'pcpt_canto',
     'mic_test',
@@ -14,6 +15,7 @@ class TestManager {
 
   classes = {
     intro: Intro,
+    questionnaire: Questionnaire,
     pcpt_mando: PcptMando,
     pcpt_canto: PcptCanto,
     mic_test: null,
@@ -22,7 +24,6 @@ class TestManager {
     listen_test: null,
     prod_train: null,
     prod_test: null,
-    questionnaire: null
   }
 
   constructor(doc, div) {
