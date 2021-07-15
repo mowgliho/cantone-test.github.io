@@ -16,7 +16,7 @@ class PcptMando {
     this.share = share;
 
     //instructions
-    doc.create('h2','Perception Test:', div);
+    doc.create('h2','Perception Test 1:', div);
     doc.create('label','Here, you listen to audio snippets and classify them as having a rising pitch, a falling pitch, or a level pitch. You will start by hearing some examples, each of which you will hear ' + this.numExamples + ' times. In the test, you will be able to hear each stimuli only once.',div);
     doc.create('hr', null, div);
     

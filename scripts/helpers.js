@@ -76,3 +76,15 @@ function getAudioStream(callback) {
     });
   }
 }
+
+function shuffleArray(array) {
+  var idx = array.length;
+  while (0 !== idx) {
+    // Pick a remaining element...
+    const rIdx = Math.floor(Math.random() * idx);
+    idx--;
+    // And swap it with the current element.
+    [array[idx], array[rIdx]] = [array[rIdx], array[idx]];
+  }
+  return array;
+}

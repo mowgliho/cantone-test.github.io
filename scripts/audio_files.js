@@ -29,4 +29,16 @@ class AudioFiles {
   pcptMandoFilenames() {
     return this.pcptMando.slice();
   }
+
+  pcptCanto(reference, contourTones, inj) {
+    let ret = [];
+    const tones = contourTones? ['2','4','5']: ['1','3','6'];
+    const segs = reference?['si']:['ji','jyu','haam','wan'];
+    for(var i = 0; i < tones.length; i++) {
+      let seg = segs[Math.floor(Math.random()*segs.length)];
+      let tone = inj? tones[i]: tones[Math.floor(Math.random()*tones.length)];
+      ret.push({fn: 'wav/humanum/' + seg + tone + '.wav', tone:tone});
+    }
+    return ret;
+  }
 }

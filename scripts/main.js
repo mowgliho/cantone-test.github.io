@@ -15,7 +15,7 @@ class TestManager {
   classes = {
     intro: Intro,
     pcpt_mando: PcptMando,
-    pcpt_canto: null,
+    pcpt_canto: PcptCanto,
     mic_test: null,
     task_intro: null,
     listen_train: null,
