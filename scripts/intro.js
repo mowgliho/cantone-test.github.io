@@ -1,4 +1,5 @@
 class Intro {
+  idColor = 'green'
   micColor = 'green';
   micDuration = 3;
   measurementInterval = 25;
@@ -11,7 +12,12 @@ class Intro {
 
     this.manager = manager;
     //intro
-    let label = doc.create('label', "Thanks for taking part in the Cantone experiment! For this experiment, you will need to be able to hear audio and create audio.", div)
+    let label = doc.create('label', "Thanks for agreeing to participate! Your anonymous identification number is ",div);
+    label = doc.create('label', share.get('id'),div);
+    label.style.color = this.idColor;
+    doc.create('label','. Please keep this for your records. If you would like to withdraw from the study, just tell us with this id number', div)
+    doc.create('hr',null,div);
+    doc.create('label',"For this experiment, you will need to be able to hear audio and create audio.", div)
     doc.create('hr',null,div);
 
     //audio check

@@ -1,5 +1,6 @@
 class TestManager {
   flow = [
+    'consent',
     'intro',
     'questionnaire',
     'pcpt_mando',
@@ -14,6 +15,7 @@ class TestManager {
   ];
 
   classes = {
+    consent: Consent,
     intro: Intro,
     questionnaire: Questionnaire,
     pcpt_mando: PcptMando,
