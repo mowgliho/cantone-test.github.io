@@ -88,3 +88,10 @@ function shuffleArray(array) {
   }
   return array;
 }
+
+function getAnalyzer(audioContext, stream) {
+  let analyzer = audioContext.createAnalyser();
+  analyzer.fftsize = Math.pow(2,9);
+  audioContext.createMediaStreamSource(stream).connect(analyzer)
+  return analyzer;
+}

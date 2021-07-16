@@ -18,7 +18,7 @@ class TestManager {
     questionnaire: Questionnaire,
     pcpt_mando: PcptMando,
     pcpt_canto: PcptCanto,
-    mic_test: null,
+    mic_test: MicTest,
     task_intro: null,
     listen_train: null,
     listen_test: null,

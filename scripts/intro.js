@@ -56,10 +56,8 @@ class Intro {
 
     this.micButton.disabled = true;
 
-    const analyzer = audioContext.createAnalyser();
-    analyzer.fftsize = Math.pow(2,9);
+    let analyzer = getAnalyzer(audioContext, stream);
     const sampleRate = audioContext.sampleRate;
-    audioContext.createMediaStreamSource(stream).connect(analyzer);
 
     const data = new Float32Array(analyzer.fftSize);
 
