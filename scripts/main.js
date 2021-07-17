@@ -21,7 +21,7 @@ class TestManager {
     pcpt_mando: PcptMando,
     pcpt_canto: PcptCanto,
     mic_test: MicTest,
-    task_intro: null,
+    task_intro: TaskIntro,
     listen_train: null,
     listen_test: null,
     prod_train: null,
