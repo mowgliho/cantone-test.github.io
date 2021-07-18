@@ -41,4 +41,8 @@ class AudioFiles {
     }
     return ret;
   }
+
+  taskIntro(tone) {
+    return new Audio('wav/humanum/si' + tone + '.wav');
+  }
 }
