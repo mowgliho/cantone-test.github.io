@@ -73,6 +73,8 @@ class MicTest {
     }
     this.vocalNextButton = doc.create('button','Next',this.vocalDiv);
     this.vocalDiv.style.display = 'none';
+
+    this.attemptContours = [];
   }
 
   ambientNoise(audioContext, stream, button) {
@@ -175,7 +177,15 @@ class MicTest {
     }
   }
 
-  tunerFinished(t) {
+  tunerFinished(t, mean, z, contour) {
+    this.attemptContours.push({
+      id: this.attemptContours.length,
+      mean: mean,
+      z: z,
+      contour:contour
+    })
+    this.attemptCount += 1;
+
     var finished = true;
     for(var tuner of this.tuners) {
       tuner.reactivate();
@@ -184,8 +194,27 @@ class MicTest {
     if(finished) {
       const that = this;
       this.vocalNextButton.disabled = false;
-      this.vocalNextButton.onclick = function() {that.manager.next();};
+      this.vocalNextButton.onclick = function() {that.next();};
     }
+  }
+
+  next() {
+    const id = this.share.get('id');
+    var body = id + '_mic_test.tsv\n';
+    for(var contour of this.attemptContours) {
+      body += [contour['id'],contour['mean'].toFixed(3),contour['z'].toFixed(3)].join('\t') + '\n';
+      body += 'time\tst\ttarget\n';
+      for(var row of contour['contour']) {
+        body += row.join('\t') + '\n';
+      }
+      body += 'New Contour:\n';
+    }
+    
+    fetch(Config.plainTextCgi, { method: 'POST', body: body}).then(
+      (response) => {response.text().then(function(x) {console.log(x)})}).catch(
+      (error) => {console.log("error", error)});
+
+    this.manager.next();
   }
 
   start() {}

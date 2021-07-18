@@ -48,8 +48,8 @@ class Tuning {
     this.target = mean + z*sd;
     this.sdHeight = Tuning.canvasHeightSd * sd;
     this.line = 0.5 + z/Tuning.canvasHeightSd;
+    this.z = z;
     this.attempt = null;
-    this.attemptContours = [];
     this.tunedFlag = false;
     this.update();
   }
@@ -72,6 +72,7 @@ class Tuning {
 
   tune(node, audioContext, stream) {
     const that = this;
+    const start = (new Date()).getTime();
 
     this.share.clearTimeouts();
     node.stop();
@@ -94,7 +95,7 @@ class Tuning {
       attempts[idx] = rawAttempt;
       idx = (idx + 1) % attempts.length;
       const mean = attempts.reduce((a,x) => a+x,0)/attempts.length;
-      contour.push(st);
+      contour.push([(new Date()).getTime() - start, st.toFixed(3), that.target.toFixed(3)]);
       if(Math.abs(mean - that.line) < Tuning.closeTune) that.stopTuning(true, contour);
 
       const val = Math.max(Tuning.margin, Math.min(1-Tuning.margin, rawAttempt));
@@ -110,9 +111,8 @@ class Tuning {
     this.share.clearTimeouts();
     this.state = success?'tuned':'ready';
     this.tunedFlag = this.tunedFlag || success;
-    this.attemptContours.push(contour);
     this.update();
-    this.parent.tunerFinished(this);
+    this.parent.tunerFinished(this, this.mean, this.z, contour);
   }
 
   tuned() {
