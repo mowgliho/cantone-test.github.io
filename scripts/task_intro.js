@@ -20,6 +20,8 @@ class TaskIntro {
   }
 
   build(doc, div, audio) {
+    const that = this;
+
     let visType = this.share.get('visual');
 
     //introduction
@@ -32,6 +34,11 @@ class TaskIntro {
     doc.create('hr',null,div);
 
     this.buildTaskIntro(doc, div);
+
+    doc.create('hr', null,div);
+
+    let button = doc.create('button','Start!', div);
+    button.onclick = function() {that.manager.next()};
   }
 
   buildToneIntro(doc, parentDiv, audio, visType) {
@@ -43,7 +50,7 @@ class TaskIntro {
     doc.create('h3', 'Tones', div);
     doc.create('label', 'Cantonese is a language spoken by over 80 million people in Southern China, Hong Kong, Macao, and around the world. Like the majority of the world\'s languages, it is a tonal language. This means that the "same" syllable can have different meanings when pronounced with different pitch contours.',div);
     doc.create('p',null,div);
-    doc.create('label','Cantonese is generally thought of as having 6 tones.' + (visType == 'none'? '':' You can see them depicted in the diagram below. The x-axis represents time and the y-axis represents pitch.'),div);
+    doc.create('label','Cantonese is generally thought of as having 6 tones, with tones 1, 3, and 6 being classified as "level" tones, and tones 2, 4, and 5 being classified as "contour" tones.' + (visType == 'none'? '':' You can see them depicted in the diagram below. The x-axis represents time and the y-axis represents pitch.'),div);
     doc.create('p',null,div);
     
     //diagram if applicable
