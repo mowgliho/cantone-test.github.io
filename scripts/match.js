@@ -25,7 +25,8 @@ class Match {
   }
 
   //maxPlay = -1 means infinite playing
-  set(sources, targets, maxPlay, labelTones) {
+  set(sources, targets, maxPlay, labelTones, refOnlyAtCorrect) {
+    this.refOnlyAtCorrect = refOnlyAtCorrect;
     this.labelTones = labelTones;
     this.sources = sources.map(x => {return {fn: x['fn'],playCount:maxPlay == -1?1:maxPlay, max:maxPlay}});
     this.targets = targets.map(x => {return {fn: x['fn'], tone: x['tone'],playCount:maxPlay == -1?1:maxPlay, max:maxPlay}});
@@ -51,11 +52,12 @@ class Match {
       const endY = (i+1)*Match.boxHeight;
       //play stimuli
       this.clickBoxes.push(Match.clickBox(
-        '',
+        'source',
         0, Match.buttonWidth, startY, endY,
         function() {return that.interpolateColor(Match.colorText['canPlay']['color'], Match.colorText['cantPlay']['color'], that.sources[boxId]['playCount'], that.sources[boxId]['max'])}, 
         function() {const count = that.sources[boxId]['playCount']; return count  > 0? Match.colorText['canPlay']['text']: ''}, 
-        function() {that.play(that.sources[boxId])}
+        function() {that.play(that.sources[boxId])},
+        function() {return true;}
         )
       );
       //match boxes
@@ -64,7 +66,8 @@ class Match {
         Match.buttonWidth, 2*Match.buttonWidth, startY, endY,
         function() { return (that.state == 'mouse' && boxId == that.mouseStart)? Match.colorText['matching']['color']:Match.colorText['match']['color']},
         function() { return Match.colorText['match']['text']},
-        function() {that.match(boxId, true);}
+        function() { if(that.state != 'correct') that.match(boxId, true);},
+        function() { return true;}
         )
       );
     }
@@ -74,24 +77,24 @@ class Match {
       const endY = (i+1)*Match.boxHeight;
       //target boxes
       this.clickBoxes.push(Match.clickBox(
-        '',
+        'target',
         this.canvas.width - 2*Match.buttonWidth, this.canvas.width - Match.buttonWidth, startY, endY,
         function() { return Match.colorText['match']['color']},
         function() { return that.labelTones?'t' + that.targets[boxId]['tone']:''},
-        function() {that.match(boxId, false);}
+        function() { if(that.state != 'correct') that.match(boxId, false);},
+        function() { return true;}
         )
       );
       //reference stimuli
-      if(this.targets[boxId]['fn'] != null) {
-        this.clickBoxes.push(Match.clickBox(
-          '',
-          this.canvas.width - Match.buttonWidth, this.canvas.width, startY, endY,
-          function() {return that.interpolateColor(Match.colorText['canPlay']['color'], Match.colorText['cantPlay']['color'], that.targets[boxId]['playCount'], that.targets[boxId]['max'])}, 
-          function() {const count = that.targets[boxId]['playCount']; return count  > 0? Match.colorText['canPlay']['text']: ''}, 
-          function() {that.play(that.targets[boxId]);}
-          )
-        );
-      }
+      this.clickBoxes.push(Match.clickBox(
+        'ref',
+        this.canvas.width - Match.buttonWidth, this.canvas.width, startY, endY,
+        function() {return that.interpolateColor(Match.colorText['canPlay']['color'], Match.colorText['cantPlay']['color'], that.targets[boxId]['playCount'], that.targets[boxId]['max'])}, 
+        function() {const count = that.targets[boxId]['playCount']; return count  > 0? Match.colorText['canPlay']['text']: ''}, 
+        function() { if(!that.refOnlyAtCorrect || that.state == 'correct') that.play(that.targets[boxId]);},
+        function() { return (!that.refOnlyAtCorrect || that.state == 'correct');}
+        )
+      );
     }
   }
 
@@ -115,6 +118,7 @@ class Match {
     var ctx = this.canvas.getContext("2d");
     ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
     for(var clickBox of this.clickBoxes) {
+      if(!clickBox['paint']()) continue;
       const color = clickBox['color']();
       const text = clickBox['text']();
       var dim = clickBox['dims'];
@@ -182,13 +186,19 @@ class Match {
     return(this.lines.map(x => {return {start: x['start']['fn'], end: x['guess']['tone']}}));
   }
 
-  static clickBox(id, minX, maxX, minY, maxY, colorFn, textFn, callback) {
+  correct() {
+    this.state = 'correct';
+    this.paint();
+  }
+
+  static clickBox(id, minX, maxX, minY, maxY, colorFn, textFn, callback, paintFn) {
     const cback = callback;
     return {
       id: id,
       dims:{minX:minX, maxX: maxX, minY:minY, maxY:maxY},
       color: colorFn,
       text: textFn,
+      paint: paintFn,
       func: function(x,y) {
         if(x > minX && x < maxX && y > minY && y < maxY) {callback()};
       }

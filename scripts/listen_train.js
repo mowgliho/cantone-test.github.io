@@ -56,7 +56,7 @@ class ListenTrain {
     this.toneChart.style.display = 'none';
 
 
-    this.match = new Match(doc,audio, this, {text: 'Correct', fn: function() { console.log('TODO')}});
+    this.match = new Match(doc,audio, this, {text: 'Correct', fn: function() { that.correct()}});
     div.appendChild(this.match.getDiv());
 
     doc.create('hr',null,div);
@@ -110,10 +110,12 @@ class ListenTrain {
     }
 
     //match stuff
-    let stimuli = Stimuli.getListenTrainStimuli(trial['type'], trial['same'], trial['injective'], trial['n'], trial['ref']);
+    let stimuli = Stimuli.getListenTrainStimuli(trial['type'], trial['same'], trial['injective'], trial['n']);
     let sources = stimuli['sources'].map((a) => {return {fn: this.audio.listenTrain(a)}});
-    let targets = stimuli['targets'].map((a) => {return {fn: (a['syl'] != null? this.audio.listenTrain(a['syl']):null), tone: a['tone']}});
-    this.match.set(sources,targets, -1, true)
+    let targets = stimuli['targets'].map((a) => {return {fn: this.audio.listenTrain(a['syl']), tone: a['tone']}});
+    this.match.set(sources,targets, -1, true, !trial['ref'])
+    
+    this.nextButton.disabled = true;
   }
 
   nextTrial() {
@@ -124,6 +126,11 @@ class ListenTrain {
       if(this.trialIdx[0] < this.trials.length) this.startTrial();
       else this.finish();
     }
+  }
+
+  correct() {
+    this.match.correct();
+    this.nextButton.disabled = false;
   }
 
   finish() {

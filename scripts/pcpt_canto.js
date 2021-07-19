@@ -36,7 +36,7 @@ class PcptCanto {
     this.roundHeader.innerHTML = 'Round ' + (this.round + 1) + ' of ' + this.trials.length + '.';
     this.trialDiv.innerHTML = '';
     this.trialDiv.appendChild(info['text']);
-    this.match.set(shuffleArray(info['sources']),shuffleArray(info['targets']), this.maxPlay, false)
+    this.match.set(shuffleArray(info['sources']),shuffleArray(info['targets']), this.maxPlay, false, false)
     this.trialDiv.appendChild(this.match.getDiv());
   }
 
@@ -63,7 +63,6 @@ class PcptCanto {
   }
 
   next() {
-    console.log(this);
     this.answers.push(this.match.getGuesses());
     this.round += 1;
     if(this.round < this.trials.length) {
