@@ -77,7 +77,8 @@ function getAudioStream(callback) {
   }
 }
 
-function shuffleArray(array) {
+function shuffleArray(orig) {
+  let array = orig.map((a) => a);
   var idx = array.length;
   while (0 !== idx) {
     // Pick a remaining element...
