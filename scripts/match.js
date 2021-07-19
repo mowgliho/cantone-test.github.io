@@ -40,7 +40,7 @@ class Match {
   }
 
   //maxPlay = -1 means infinite playing
-  set(sources, targets, maxPlay, labelTones, refOnlyAtCorrect) {
+  set(id, sources, targets, maxPlay, labelTones, refOnlyAtCorrect) {
     this.refOnlyAtCorrect = refOnlyAtCorrect;
     this.labelTones = labelTones;
     this.sources = sources.map(x => {return {fn: x['fn'], tone: x['tone'],playCount:maxPlay == -1?1:maxPlay, max:maxPlay}});
@@ -50,6 +50,8 @@ class Match {
     this.lines = [];
     this.nextButton.disabled = this.lines.length != this.sources.length;
     this.paint();
+    this.usageData = {play:[],line:[]};
+    this.id = id;
   }
 
   setupCanvas() {
@@ -71,7 +73,7 @@ class Match {
         0, Match.buttonWidth, startY, endY,
         function() {return that.interpolateColor(Match.colorText['canPlay']['color'], Match.colorText['cantPlay']['color'], that.sources[boxId]['playCount'], that.sources[boxId]['max'])}, 
         function() {const count = that.sources[boxId]['playCount']; return count  > 0? Match.colorText['canPlay']['text']: ''}, 
-        function() {that.play(that.sources[boxId])},
+        function() {that.play('source',boxId,that.sources[boxId])},
         function() {return true;}
         )
       );
@@ -106,15 +108,19 @@ class Match {
         this.canvas.width - Match.buttonWidth, this.canvas.width, startY, endY,
         function() {return that.interpolateColor(Match.colorText['canPlay']['color'], Match.colorText['cantPlay']['color'], that.targets[boxId]['playCount'], that.targets[boxId]['max'])}, 
         function() {const count = that.targets[boxId]['playCount']; return count  > 0? Match.colorText['canPlay']['text']: ''}, 
-        function() { if(!that.refOnlyAtCorrect || that.state == 'correct') that.play(that.targets[boxId]);},
+        function() { if(!that.refOnlyAtCorrect || that.state == 'correct') that.play('target',boxId,that.targets[boxId]);},
         function() { return (!that.refOnlyAtCorrect || that.state == 'correct');}
         )
       );
     }
   }
 
-  play(info) {
-    if(info['playCount'] > 0 || info['max'] == -1) (new Audio(info['fn'])).play();
+  play(type, boxId, info) {
+    if(info['playCount'] > 0 || info['max'] == -1) {
+      (new Audio(info['fn'])).play();
+      let syl = info['fn'].split(/[\\/]/).pop().split('.')[0];
+      this.usageData['play'].push({id: this.id, type: type, boxId: boxId, syl: syl, time: (new Date()).getTime()});
+    }
     if(info['playCount'] > 0 && info['max'] != -1) info['playCount'] -= 1;
   }
 
@@ -204,6 +210,8 @@ class Match {
           guess: this.targets[id],
           startInd: this.mouseStart,
           });
+        let syl = this.sources[this.mouseStart]['fn'].split(/[\\/]/).pop().split('.')[0];
+        this.usageData['line'].push({id:this.id, time: (new Date()).getTime(), startIdx: this.mouseStart, endIdx: id, syl: syl, guess: this.targets[id]['tone']});
       }
     }
     this.paint();
@@ -222,6 +230,10 @@ class Match {
 
   getGuesses() {
     return(this.lines.map(x => {return {start: x['start']['fn'], end: x['guess']['tone']}}));
+  }
+
+  getUsageData() {
+    return this.usageData;
   }
 
   correct() {

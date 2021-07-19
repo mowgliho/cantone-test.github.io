@@ -36,7 +36,7 @@ class PcptCanto {
     this.roundHeader.innerHTML = 'Round ' + (this.round + 1) + ' of ' + this.trials.length + '.';
     this.trialDiv.innerHTML = '';
     this.trialDiv.appendChild(info['text']);
-    this.match.set(shuffleArray(info['sources']),shuffleArray(info['targets']), this.maxPlay, false, false)
+    this.match.set(shuffleArray(this.round, info['sources']),shuffleArray(info['targets']), this.maxPlay, false, false)
     this.trialDiv.appendChild(this.match.getDiv());
   }
 

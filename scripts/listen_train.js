@@ -64,7 +64,9 @@ class ListenTrain {
     this.nextButton = doc.create('button','Next',div);
     this.nextButton.onclick = function() { that.nextTrial() };
     
+    this.data = {trial: [], play: [], line: []};
     this.trialIdx = [0,0];
+    this.trialId = 0;
     this.startTrial();
   }
 
@@ -90,6 +92,16 @@ class ListenTrain {
   startTrial() {
     //ui stuff
     let trial = this.trials[this.trialIdx[0]][this.trialIdx[1]];
+    this.data['trial'].push({
+      id: this.trialId,
+      tones: trial['type'], 
+      ref: trial['ref'],
+      same: trial['same'],
+      injective: trial['injective'],
+      visual: trial['visual'],
+      vistype: this.visType,
+      start: (new Date()).getTime()
+    });
     this.trialDesc.innerHTML = 'Training ' + trial['type'] + ' tones, round ' + (this.trialIdx[1]+1) + '/' + this.trials[this.trialIdx[0]].length + ':';
     this.trialDesc.style.backgroundColor = trial['color'];
     for(const param of ['ref','same','injective']) {
@@ -113,13 +125,19 @@ class ListenTrain {
     let stimuli = Stimuli.getListenTrainStimuli(trial['type'], trial['same'], trial['injective'], trial['n']);
     let sources = stimuli['sources'].map((a) => {return {fn: this.audio.listenTrain(a['syl']), tone: a['tone']}});
     let targets = stimuli['targets'].map((a) => {return {fn: this.audio.listenTrain(a['syl']), tone: a['tone']}});
-    this.match.set(sources,targets, -1, true, !trial['ref'])
+    this.match.set(this.trialId, sources,targets, -1, true, !trial['ref'])
     
     this.nextButton.style.display = 'none';
   }
 
   nextTrial() {
+    let usageData = this.match.getUsageData();
+    for(const [key,val] of Object.entries(usageData)) {
+      this.data[key] = this.data[key].concat(val);
+    }
+    this.data['trial'][this.data['trial'].length - 1]['end'] = (new Date()).getTime();
     this.trialIdx[1] += 1;
+    this.trialId += 1;
     if(this.trialIdx[1] < this.trials[this.trialIdx[0]].length) this.startTrial();
     else {
       this.trialIdx = [this.trialIdx[0] + 1,0];
@@ -129,13 +147,37 @@ class ListenTrain {
   }
 
   correct() {
+    this.data['trial'][this.data['trial'].length - 1]['correct'] = (new Date()).getTime();
     this.match.correct();
     this.nextButton.style.display = 'block';
   }
 
   finish() {
     this.nextButton.style.display = 'none';
-    console.log('finnished');
+    this.uploadFiles(Object.keys(this.data));
+    this.manager.next();
+  }
+
+  uploadFiles(keys) {
+    const that = this;
+
+    const key = keys.pop();
+    if(this.data[key].length > 0) {
+      let data = this.data[key];
+      let cols = Object.keys(data[0]);
+      const id = this.share.get('id');
+
+      var body = id + '_listen_train_' + key + '.tsv\n';
+      body += cols.join('\t') + '\n'
+      for(var row of data) {
+        body += cols.map((a) => row[a]).join('\t') + '\n'
+      }
+      fetch(Config.plainTextCgi, { method: 'POST', body: body}).then(
+        (response) => {response.text().then(function(x) {console.log(x); if(keys.length > 0) that.uploadFiles(keys);})}).catch(
+        (error) => {console.log("error", error)});
+    } else {
+      if(keys.length > 0) this.uploadFiles(keys);
+    }
   }
 
   start() {}
