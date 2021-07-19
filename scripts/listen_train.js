@@ -111,11 +111,11 @@ class ListenTrain {
 
     //match stuff
     let stimuli = Stimuli.getListenTrainStimuli(trial['type'], trial['same'], trial['injective'], trial['n']);
-    let sources = stimuli['sources'].map((a) => {return {fn: this.audio.listenTrain(a)}});
+    let sources = stimuli['sources'].map((a) => {return {fn: this.audio.listenTrain(a['syl']), tone: a['tone']}});
     let targets = stimuli['targets'].map((a) => {return {fn: this.audio.listenTrain(a['syl']), tone: a['tone']}});
     this.match.set(sources,targets, -1, true, !trial['ref'])
     
-    this.nextButton.disabled = true;
+    this.nextButton.style.display = 'none';
   }
 
   nextTrial() {
@@ -130,11 +130,11 @@ class ListenTrain {
 
   correct() {
     this.match.correct();
-    this.nextButton.disabled = false;
+    this.nextButton.style.display = 'block';
   }
 
   finish() {
-    this.nextButton.disabled = true;
+    this.nextButton.style.display = 'none';
     console.log('finnished');
   }
 

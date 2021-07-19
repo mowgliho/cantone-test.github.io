@@ -10,6 +10,13 @@ class Match {
     matching: {color:'blue',text:'Match'},
   }
 
+  static correctInfo = {
+    guess: {color: 'black', text: null, dash: []},
+    correct: {color: 'green', text: 'Correct answers are in ', dash: []},
+    incorrect: {color: 'red', text: 'Incorrect answers are in ',dash: []},
+    missed: {color: 'blue', text: 'Missed correct answers are in dashed ', dash: [5,15]}
+  }
+
   //next is a dict of text and function
   constructor(doc, audio, parent, next) {
     const that = this;
@@ -18,9 +25,17 @@ class Match {
     this.parent = parent;
     //canvas
     this.canvas = doc.create('canvas',null, this.div);
-    //correct button
-    this.nextButton = doc.create('button',next['text'], this.div);
-    this.nextButton.style.display = 'block';
+    //correct
+    let correctDiv = doc.create('div',null, this.div);
+    this.correctLegend = doc.create('div',null, correctDiv);
+    for(const [key,val] of Object.entries(Match.correctInfo)) {
+      if(val['text'] != null) {
+        let label = doc.create('label', val['text'] + val['color'] + ' ', this.correctLegend);
+        label.style.color = val['color'];
+      }
+    }
+    doc.create('p','You may click on the stimuli or references to play audio again before continuing.',this.correctLegend);
+    this.nextButton = doc.create('button',next['text'], correctDiv);
     this.nextButton.onclick = function() {next['fn']();}
   }
 
@@ -28,7 +43,7 @@ class Match {
   set(sources, targets, maxPlay, labelTones, refOnlyAtCorrect) {
     this.refOnlyAtCorrect = refOnlyAtCorrect;
     this.labelTones = labelTones;
-    this.sources = sources.map(x => {return {fn: x['fn'],playCount:maxPlay == -1?1:maxPlay, max:maxPlay}});
+    this.sources = sources.map(x => {return {fn: x['fn'], tone: x['tone'],playCount:maxPlay == -1?1:maxPlay, max:maxPlay}});
     this.targets = targets.map(x => {return {fn: x['fn'], tone: x['tone'],playCount:maxPlay == -1?1:maxPlay, max:maxPlay}});
     this.setupCanvas();
     this.state = 'pick';
@@ -127,6 +142,7 @@ class Match {
       ctx.fillRect(dim['minX'],dim['minY'],dim['maxX']-dim['minX'],dim['maxY']-dim['minY']);
       //border
       ctx.beginPath();
+      ctx.setLineDash([]);
       ctx.strokeStyle = 'black';
       ctx.rect(dim['minX'],dim['minY'],dim['maxX']-dim['minX'],dim['maxY']-dim['minY']);
       ctx.stroke();
@@ -137,11 +153,35 @@ class Match {
       ctx.font = '12px Arial';
       ctx.fillText(text,(dim['minX'] + dim['maxX'])/2,(dim['minY']+dim['maxY'])/2);
     }
-    for(var line of this.lines) {
-      Match.drawLine(this.canvas, ctx, line);
+    this.drawLines(ctx);
+    //buttons and divs
+    this.nextButton.disabled = (this.lines.length != this.sources.length) || (this.state == 'correct');
+    this.nextButton.style.display = this.state == 'correct'?'none':'block';
+    this.correctLegend.style.display= this.state == 'correct'? 'block':'none';
+  }
+
+  drawLines(ctx) {
+    if(this.state != 'correct') {
+      let params = Match.correctInfo['guess'];
+      for(var line of this.lines) {
+        Match.drawLine(this.canvas, ctx, line, params['color'], params['dash']);
+      }
+    } else {
+      for(var line of this.lines) {
+        let correct = line['start']['tone'] == line['guess']['tone'];
+        let params = correct? Match.correctInfo['correct']:Match.correctInfo['incorrect'];
+        Match.drawLine(this.canvas, ctx, line, params['color'], params['dash']);
+        if(!correct) {
+          params = Match.correctInfo['missed'];
+          for(var i = 0; i < this.targets.length; i++) {
+            if(line['start']['tone'] == this.targets[i]['tone']) {
+              let missedLine = {startIdx: line['startIdx'], endIdx: i};
+              Match.drawLine(this.canvas, ctx, missedLine, params['color'], params['dash']);
+            }
+          }
+        }
+      }
     }
-//    //buttons and divs
-    this.nextButton.disabled = Match.numGuesses(this.lines) != this.sources.length;
   }
 
   //id of box, start is whether is start of arrow or end
@@ -158,14 +198,12 @@ class Match {
         for(var line of this.lines) if(this.mouseStart != line['startInd']) newLines.push(line);
         this.lines = newLines;
         this.lines.push({
-          startY: Match.boxHeight*(0.5+this.mouseStart), 
-          endY: Match.boxHeight*(0.5+id),
+          startIdx: this.mouseStart, 
+          endIdx: id,
           start: this.sources[this.mouseStart],
           guess: this.targets[id],
           startInd: this.mouseStart,
-          color: 'black',
-          type: 'guess',
-          dashed: false});
+          });
       }
     }
     this.paint();
@@ -205,21 +243,12 @@ class Match {
     }
   }
 
-  static drawLine(canvas, ctx, line) {
-    ctx.strokeStyle = line['color'];
-    ctx.setLineDash(line['dashed']?[5,15]:[]);
+  static drawLine(canvas, ctx, line, color, dash) {
+    ctx.strokeStyle = color;
+    ctx.setLineDash(dash);
     ctx.beginPath();
-    ctx.moveTo(Match.buttonWidth*2, line['startY']);
-    ctx.lineTo(canvas.width - Match.buttonWidth*2, line['endY']);
+    ctx.moveTo(Match.buttonWidth*2, Match.boxHeight*(0.5+line['startIdx']));
+    ctx.lineTo(canvas.width - Match.buttonWidth*2, Match.boxHeight*(0.5+line['endIdx']));
     ctx.stroke();
   }
-
-  static numGuesses(lines) {
-    var guesses = 0;
-    for(var line of lines) {
-      if(line['type'] == 'guess') guesses += 1;
-    }
-    return(guesses);
-  }
-
 }

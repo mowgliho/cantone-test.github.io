@@ -17,7 +17,7 @@ class Stimuli {
       else seg = same?ret[i-1]['seg']:stimuli[Math.floor(Math.random()*stimuli.length)];
       ret.push({'seg':seg, tone:tones[i]});
     }
-    let sourceStimuli = ret.map((a) => a['seg'] + a['tone']);
+    let sourceStimuli = ret.map((a) => { return {tone: a['tone'], syl: a['seg'] + a['tone']}});
     let targetStimuli = info['tones'].map((t) => {return {tone: t, syl: 'si' + t}})
     return {sources: sourceStimuli, targets: targetStimuli};
   }
