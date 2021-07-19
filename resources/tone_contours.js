@@ -74,7 +74,6 @@ class ToneContours {
           ctx.stroke();
         }
         let textIdx = type == 'idealized'? Math.floor(contour.length*0.5): contour.length -1;
-        console.log(textIdx,contour.length);
         ctx.font = textSize + 'px serif';
         ctx.textBaseline = type == 'idealized'? 'top':'middle';
         ctx.fillText(t, x(contour[textIdx][0]), y(contour[textIdx][1]));

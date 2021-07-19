@@ -63,7 +63,7 @@ class TaskIntro {
     //example div
     let exampleDiv = doc.create('div',null,div);
     //list of examples
-    doc.create('p','For example, consider the Cantonese syllable /si/, which rhymes with the English words "see" and "see." Saying this word with the six different tones results in the following different meanings (Note that you can play each example a maximum of ' + this.exCount + ' times):',exampleDiv);
+    doc.create('p','For example, consider the Cantonese syllable /si/, which rhymes with the English words "see" and "sea." Saying this word with the six different tones results in the following different meanings (Note that you can play each example a maximum of ' + this.exCount + ' times):',exampleDiv);
     let list = doc.create('ul',null,exampleDiv);
     for(const [tone, info] of Object.entries(this.examples)) {
       let itemDiv = doc.create('li',null,list);
@@ -77,7 +77,7 @@ class TaskIntro {
 
   buildTaskIntro(doc, div) {
     doc.create('h3', 'Task', div);
-    doc.create('p', 'This study investigates how people learn to perceive, produce, and internalize (i.e. speak) Cantonese tones. It will consists of 4 parts:', div);
+    doc.create('p', 'This study investigates how people learn to perceive, produce, and internalize Cantonese tones. It will consists of 4 parts:', div);
     let list = doc.create('ul',null,div);
     doc.create('li','Perception Training: You will match audio snippets to their corresponding tone labels, in a fashion similar to the matching game that you\'ve already played. The difficulty of the game will increase as you play.', list)
     doc.create('li','Perception Test: You will hear an audio snippet. We will ask you which tone(s) was(were) produced; you will enter in the tone number(s) of your guess into a text box.', list)
