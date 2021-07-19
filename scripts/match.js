@@ -10,7 +10,8 @@ class Match {
     matching: {color:'blue',text:'Match'},
   }
 
-  constructor(doc, audio, parent) {
+  //next is a dict of text and function
+  constructor(doc, audio, parent, next) {
     const that = this;
 
     this.div = doc.create('div');
@@ -18,14 +19,16 @@ class Match {
     //canvas
     this.canvas = doc.create('canvas',null, this.div);
     //correct button
-    this.nextButton = doc.create('button','Next', this.div);
+    this.nextButton = doc.create('button',next['text'], this.div);
     this.nextButton.style.display = 'block';
-    this.nextButton.onclick = function() {that.next();}
+    this.nextButton.onclick = function() {next['fn']();}
   }
 
-  set(sources, targets, maxPlay) {
-    this.sources = sources.map(x => {return {fn: x['fn'],playCount:maxPlay, max:maxPlay}});
-    this.targets = targets.map(x => {return {fn: x['fn'], tone: x['tone'],playCount:maxPlay, max:maxPlay}});
+  //maxPlay = -1 means infinite playing
+  set(sources, targets, maxPlay, labelTones) {
+    this.labelTones = labelTones;
+    this.sources = sources.map(x => {return {fn: x['fn'],playCount:maxPlay == -1?1:maxPlay, max:maxPlay}});
+    this.targets = targets.map(x => {return {fn: x['fn'], tone: x['tone'],playCount:maxPlay == -1?1:maxPlay, max:maxPlay}});
     this.setupCanvas();
     this.state = 'pick';
     this.lines = [];
@@ -74,32 +77,35 @@ class Match {
         '',
         this.canvas.width - 2*Match.buttonWidth, this.canvas.width - Match.buttonWidth, startY, endY,
         function() { return Match.colorText['match']['color']},
-        function() { return ''},
+        function() { return that.labelTones?'t' + that.targets[boxId]['tone']:''},
         function() {that.match(boxId, false);}
         )
       );
       //reference stimuli
-      this.clickBoxes.push(Match.clickBox(
-        '',
-        this.canvas.width - Match.buttonWidth, this.canvas.width, startY, endY,
-        function() {return that.interpolateColor(Match.colorText['canPlay']['color'], Match.colorText['cantPlay']['color'], that.targets[boxId]['playCount'], that.targets[boxId]['max'])}, 
-        function() {const count = that.targets[boxId]['playCount']; return count  > 0? Match.colorText['canPlay']['text']: ''}, 
-        function() {that.play(that.targets[boxId]);}
-        )
-      );
+      if(this.targets[boxId]['fn'] != null) {
+        this.clickBoxes.push(Match.clickBox(
+          '',
+          this.canvas.width - Match.buttonWidth, this.canvas.width, startY, endY,
+          function() {return that.interpolateColor(Match.colorText['canPlay']['color'], Match.colorText['cantPlay']['color'], that.targets[boxId]['playCount'], that.targets[boxId]['max'])}, 
+          function() {const count = that.targets[boxId]['playCount']; return count  > 0? Match.colorText['canPlay']['text']: ''}, 
+          function() {that.play(that.targets[boxId]);}
+          )
+        );
+      }
     }
   }
 
   play(info) {
-    if(info['playCount'] > 0) (new Audio(info['fn'])).play();
-    info['playCount'] -= 1;
+    if(info['playCount'] > 0 || info['max'] == -1) (new Audio(info['fn'])).play();
+    if(info['playCount'] > 0 && info['max'] != -1) info['playCount'] -= 1;
   }
 
   //j is count from end, not from start
   interpolateColor(start, end, j, n) {
     let arr = [];
     for(var i = 0; i < start.length; i++) {
-      arr.push(start[i] + (end[i]-start[i])*(n-j)/n);
+      if(n == -1) arr.push(start[i]);
+      else arr.push(start[i] + (end[i]-start[i])*(n-j)/n);
     }
     return 'rgba(' + arr.join(',') + ')';
   }
@@ -170,10 +176,6 @@ class Match {
 
   getDiv() {
     return this.div;
-  }
-
-  next() {
-    this.parent.next();
   }
 
   getGuesses() {

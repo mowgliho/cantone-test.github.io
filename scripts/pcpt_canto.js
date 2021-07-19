@@ -25,7 +25,7 @@ class PcptCanto {
     this.roundHeader = doc.create('h4',null,div);
     this.trialDiv = doc.create('div',null,div);
     this.round = 0;
-    this.match = new Match(doc,audio, this);
+    this.match = new Match(doc,audio, this, {text: 'Next', fn: function() {that.next()}});
     this.initiateTrial();
     this.answers = [];
   }
@@ -36,7 +36,7 @@ class PcptCanto {
     this.roundHeader.innerHTML = 'Round ' + (this.round + 1) + ' of ' + this.trials.length + '.';
     this.trialDiv.innerHTML = '';
     this.trialDiv.appendChild(info['text']);
-    this.match.set(shuffleArray(info['sources']),shuffleArray(info['targets']), this.maxPlay)
+    this.match.set(shuffleArray(info['sources']),shuffleArray(info['targets']), this.maxPlay, false)
     this.trialDiv.appendChild(this.match.getDiv());
   }
 
@@ -63,6 +63,7 @@ class PcptCanto {
   }
 
   next() {
+    console.log(this);
     this.answers.push(this.match.getGuesses());
     this.round += 1;
     if(this.round < this.trials.length) {

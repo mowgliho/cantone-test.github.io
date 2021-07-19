@@ -1,13 +1,16 @@
 class ListenTrain {
+  visSize = {side:300, text:15};
+
   toneSets = [
-    {type: 'level', n: 2, color: 'lavender'},
-    {type: 'contour', n: 2, color: '#BCB88A'},
-    {type: 'all', n: 1, color: '#FFA07A'}
+    {type: 'level', n: 2, color: 'lavender',tones: ['t1','t3','t6']},
+    {type: 'contour', n: 2, color: '#BCB88A',tones: ['t2','t4','t5']},
+    {type: 'all', n: 1, color: '#FFA07A',tones:null}
   ]
 
   paramSets = [
     {ref: true, same: true, injective: true, visual: true},
-    {ref: false, same: true, injective: true, visual: true}, {ref: false, same: false, injective: true, visual: true},
+    {ref: false, same: true, injective: true, visual: true},
+    {ref: false, same: false, injective: true, visual: true},
     {ref: false, same: false, injective: false, visual: true},
     {ref: false, same: false, injective: false, visual: false}
   ]
@@ -26,9 +29,11 @@ class ListenTrain {
   constructor(manager, doc, div, audio, share) {
     const that = this;
 
+    this.audio = audio;
     this.share = share;
     this.manager = manager;
     this.visType = share.get('visual');
+    this.doc = doc;
 
     doc.create('h2', 'Perception Training:',div);
     this.trials = this.buildTrials();
@@ -43,6 +48,17 @@ class ListenTrain {
       this.trialParamDesc[param] = doc.create('label', null, paramDiv);
     }
     doc.create('hr',null,div);
+    
+    //diagram if applicable
+    this.toneChart = doc.create('div', null, div);
+    doc.create('p','Tone Chart:',this.toneChart);
+    doc.create('hr',null,this.toneChart);
+    this.toneChart.style.display = 'none';
+
+
+    this.match = new Match(doc,audio, this, {text: 'Correct', fn: function() { console.log('TODO')}});
+    div.appendChild(this.match.getDiv());
+
     doc.create('hr',null,div);
 
     this.nextButton = doc.create('button','Next',div);
@@ -58,7 +74,7 @@ class ListenTrain {
       const trialSet = [];
       for(var params of this.paramSets) {
         for(var i = 0; i < tones['n']; i++) {
-          const param = {type:tones['type'], n: i, color: tones['color']};
+          const param = {type:tones['type'], n: i, color: tones['color'], tones: tones['tones']};
           for(const [key,val] of Object.entries(params)) {
             if(key == 'visual' && this.visType == 'none') param[key] = false;
             else param[key] = val
@@ -71,18 +87,6 @@ class ListenTrain {
     return trials;
   }
 
-  addTrial(toneSetIdx, paramSetIdx, n) {
-    this.trials.push({tones: this.toneSets[toneSetIdx]['type'], params: this.paramSets[paramSetIdx], n: n});
-    if(n < this.toneSets[toneSetIdx]['n']) this.addTrial(toneSetIdx, paramSetIdx, n + 1);
-    else {
-      if(paramSetIdx < this.paramSets.length - 1) this.addTrial(toneSetIdx, paramSetIdx + 1, 1);
-      else {
-        if(toneSetIdx < this.toneSets.length - 1) this.addTrial(toneSetIdx + 1, 0, 1);
-        else return;
-      }
-    }
-  }
-
   startTrial() {
     //ui stuff
     let trial = this.trials[this.trialIdx[0]][this.trialIdx[1]];
@@ -92,7 +96,24 @@ class ListenTrain {
       this.trialParamDesc[param].innerHTML = this.paramSettings[trial[param]]['text'];
       this.trialParamDesc[param].style.backgroundColor = this.paramSettings[trial[param]]['color'];
     }
+    //visual if applicable
+    this.toneChart.innerHTML = '';
+    if(this.visType != 'none' && trial['visual']) {
+      this.doc.create('h4','Tone Chart: ',this.toneChart);
+      let visDiv = ToneContours.getVisual(this.doc, this.visType, this.visSize['side'], this.visSize['side'], trial['tones'], this.visSize['text']);
+      visDiv.style.display = 'inline-block';
+      this.toneChart.appendChild(visDiv);
+      this.doc.create('hr',null,this.toneChart);
+      this.toneChart.style.display = 'block';
+    } else {
+      this.toneChart.style.display = 'none';
+    }
+
     //match stuff
+    let stimuli = Stimuli.getListenTrainStimuli(trial['type'], trial['same'], trial['injective'], trial['n'], trial['ref']);
+    let sources = stimuli['sources'].map((a) => {return {fn: this.audio.listenTrain(a)}});
+    let targets = stimuli['targets'].map((a) => {return {fn: (a['syl'] != null? this.audio.listenTrain(a['syl']):null), tone: a['tone']}});
+    this.match.set(sources,targets, -1, true)
   }
 
   nextTrial() {

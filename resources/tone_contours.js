@@ -41,7 +41,7 @@ class ToneContours {
   }
 
   //tone can be highlighted (for production)
-  static getVisual(doc, type, width, height, tone, textSize) {
+  static getVisual(doc, type, width, height, tones, textSize) {
     //define canvas
     let div = doc.create('div',null);
     let canvas = doc.create('canvas',null,div);
@@ -66,7 +66,7 @@ class ToneContours {
       for(var i = 0; i < ToneContours.tones.length; i++) {
         let t = ToneContours.tones[i];
         let contour = contours[i];
-        ctx.setLineDash((tone != null && t != tone)?[5,15]:[]);
+        ctx.setLineDash((tones != null && !(tones.includes(t)))?[5,15]:[]);
         ctx.beginPath();
         ctx.moveTo(x(contour[0][0]), y(contour[0][1]));
         for(var j = 1; j < contour.length; j++) {

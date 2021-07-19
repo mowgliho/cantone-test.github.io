@@ -5,7 +5,7 @@ class Stimuli {
     all: {tones: ['1','2','3','4','5','6'], stimuli:['hon','ham','hau','jiu','joeng','soeng','se']}
   }
 
-  //returns array: input goes to input syllables; reference goes to an array of dicts, which point to tone and syl (if ref)
+  //returns array: source goes to source syllables; target goes to an array of dicts, which point to tone and syl (if ref)
   static getListenTrainStimuli(type, same, injective, nTrial, ref) {
     let info = Stimuli.listenTrain[type];
     let stimuli = info['stimuli'];
@@ -17,8 +17,9 @@ class Stimuli {
       else seg = same?ret[i-1]['seg']:stimuli[Math.floor(Math.random()*stimuli.length)];
       ret.push({'seg':seg, tone:tones[i]});
     }
-    let inputStimuli = ret.map((a) => a['seg'] + a['tone']);
-    return {input: inputStimuli, reference: info['tones'].map((t) => {let r = {tone: t}; if(ref) r['syl'] = 'si' + t; return r})};
+    let sourceStimuli = ret.map((a) => a['seg'] + a['tone']);
+    let targetStimuli = info['tones'].map((t) => {return {tone: t, syl: ref?'si' + t: null}})
+    return {sources: sourceStimuli, targets: targetStimuli};
   }
 
   static getTones(tones) {

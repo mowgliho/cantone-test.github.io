@@ -45,4 +45,8 @@ class AudioFiles {
   taskIntro(tone) {
     return new Audio('wav/humanum/si' + tone + '.wav');
   }
+
+  listenTrain(syl) {
+    return 'wav/humanum/' + syl + '.wav';
+  }
 }
