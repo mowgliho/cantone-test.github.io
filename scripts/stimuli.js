@@ -26,6 +26,12 @@ class Stimuli {
     return shuffleArray(['1','2','3','4','5','6'].map((a) => ['si' + a, 'jiu' + a]).reduce((a,b) => a.concat(b),[]));
   }
 
+  //should return a pretty long list, from easiest to hardest, but repeating (as no vocoding is likely to take much shorter)
+  // when don't show graph, have to be a segmental that we already know.
+  static getProdTrainStimuli() {
+    return shuffleArray(['1','2','3','4','5','6'].map((a) => ['si' + a, 'jiu' + a]).reduce((a,b) => a.concat(b),[]));
+  }
+
   static getTones(tones) {
     let ret = [];
     for(var i = 0; i < tones.length; i++) {

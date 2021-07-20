@@ -24,7 +24,7 @@ class TestManager {
     task_intro: TaskIntro,
     listen_train: ListenTrain,
     listen_test: ListenTest,
-    prod_train: null,
+    prod_train: ProdTrain,
     prod_test: null,
     feedback: null
   }
