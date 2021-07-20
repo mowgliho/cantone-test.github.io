@@ -46,12 +46,7 @@ class AudioFiles {
     return new Audio('wav/humanum/si' + tone + '.wav');
   }
 
-  listenTrain(syl) {
+  humanum(syl) {
     return 'wav/humanum/' + syl + '.wav';
   }
-
-  listenTest(syl) {
-    return 'wav/humanum/' + syl + '.wav';
-  }
-
 }

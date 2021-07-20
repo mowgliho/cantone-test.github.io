@@ -93,7 +93,7 @@ class ListenTest {
   play() {
     if(this.playCount > 0) {
       this.playCount -=1;
-      (new Audio(this.audio.listenTest(this.stimuli[this.idx]))).play();
+      (new Audio(this.audio.humanum(this.stimuli[this.idx]))).play();
     }
     this.update();
   }

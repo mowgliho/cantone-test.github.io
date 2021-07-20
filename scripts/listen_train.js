@@ -123,8 +123,8 @@ class ListenTrain {
 
     //match stuff
     let stimuli = Stimuli.getListenTrainStimuli(trial['type'], trial['same'], trial['injective'], trial['n']);
-    let sources = stimuli['sources'].map((a) => {return {fn: this.audio.listenTrain(a['syl']), tone: a['tone']}});
-    let targets = stimuli['targets'].map((a) => {return {fn: this.audio.listenTrain(a['syl']), tone: a['tone']}});
+    let sources = stimuli['sources'].map((a) => {return {fn: this.audio.humanum(a['syl']), tone: a['tone']}});
+    let targets = stimuli['targets'].map((a) => {return {fn: this.audio.humanum(a['syl']), tone: a['tone']}});
     this.match.set(this.trialId, sources,targets, -1, true, !trial['ref'])
     
     this.nextButton.style.display = 'none';
