@@ -18,7 +18,6 @@ class ProdTrain {
     doc.create('hr',null,div);
     
     this.stateDependentButtons = [];
-    this.playbackButtons = [];
     this.buildIntroDiv(doc, div);
     this.buildTrainDiv(doc, div, audio);
   }
@@ -71,26 +70,22 @@ class ProdTrain {
     this.stimuliToneLabel.style.backgroundColor = 'lavender';
     doc.create('label',':',stimuliP);
 
-    let exButton = this.getExemplarButton(doc);
-    let recButton = this.getRecordButton(doc);
-    let pbButton = this.getPlaybackButton(doc);
+    this.exButton = this.getExemplarButton(doc);
 
     this.trainUI = doc.create('div',null,trainDiv);
     if(this.audioType == 'exemplar') {
-      let buttonBar = this.getButtonBar(doc, [exButton, recButton, pbButton]);
-      this.trainUI.appendChild(buttonBar);
+      let trainPb = this.buildPlayback(doc);
+      this.resetPb = trainPb['reset'];
+      let buttonBar = this.getButtonBar(doc, [this.exButton, trainPb['record'], trainPb['playback']]);
+      trainDiv.appendChild(buttonBar);
     }
-
-    //have to make new buttons :'(
-    this.testUI = doc.create('div',null, trainDiv);
-    this.testUI.appendChild(this.getButtonBar(doc, [this.getRecordButton(doc), this.getPlaybackButton(doc)]));
 
     //control playback volume
     let attemptVol = doc.create('div','Attempt playback volume: ',trainDiv);
     let volUp = doc.create('button','up',attemptVol);
-    volUp.onclick = function() {that.attemptVolume *= 3/2;};
+    volUp.onclick = function() {that.share.save('micGain', that.share.get('micGain') * 3/2);};
     let volDown = doc.create('button','down',attemptVol);
-    volDown.onclick = function() {that.attemptVolume *= 2/3;};
+    volDown.onclick = function() {that.share.save('micGain', that.share.get('micGain') * 2/3);};
    
     //next button
     doc.create('hr',null,trainDiv);
@@ -121,67 +116,15 @@ class ProdTrain {
     return button;
   }
 
-  getRecordButton(doc) {
+  buildPlayback(doc) {
     const that = this;
 
-    let button = doc.create('button', 'Record', null);
-    this.stateDependentButtons.push(button);
-    button.onclick = getAudioStream(function(audioContext, stream) {that.record(audioContext,stream)});
-    return button;
-  }
+    const volFn = function() {return that.share.get('micGain');};
+    const startFn = function() {that.changeState('busy');};
+    const recordedCallback = function() {that.changeState('ready')};
+    const playbackCallback = function() {that.changeState('ready')};
 
-  getPlaybackButton(doc) {
-    const that = this;
-
-    let button = doc.create('button', 'Play Attempt', null);
-    this.playbackButtons.push(button);
-    return button;
-  }
-
-  record(audioContext, stream) {
-    const that = this;
-
-    const chunks = [];
-    const recorder = new MediaRecorder(stream);
-    recorder.addEventListener('dataavailable', function(e) {
-      if (e.data.size > 0) chunks.push(e.data);
-    });
-
-    recorder.addEventListener('stop', function() {
-      let reader = new FileReader();
-      reader.onloadend = function() {
-        audioContext.decodeAudioData(reader.result).then( (audioBuffer) => {
-          that.previousAttempt = audioBuffer;
-          that.setPlaybackFunctions(audioContext);
-          that.update();
-        })
-      };
-      reader.readAsArrayBuffer(new Blob(chunks));
-      that.changeState('ready');
-    });
-
-    recorder.start();
-
-    this.changeState('busy');
-    this.share.addTimeout(setTimeout(function() {recorder.stop()},this.recordTime * 1000));
-  }
-
-  setPlaybackFunctions(audioContext) {
-    const that = this;
-
-    for(const button of this.playbackButtons) {
-      button.onclick = function() {
-        const node = audioContext.createBufferSource();
-        node.buffer = that.previousAttempt;
-        const gainNode = audioContext.createGain();
-        gainNode.gain.value = that.attemptVolume;
-
-        that.changeState('busy');
-        node.connect(gainNode).connect(audioContext.destination);
-        node.addEventListener('ended', function() {that.changeState('ready');});
-        node.start();
-      }
-    }
+    return definePlayback(doc, this.recordTime, startFn, recordedCallback, playbackCallback, volFn);
   }
 
   playExemplar() {
@@ -203,9 +146,6 @@ class ProdTrain {
     for(const val of this.stateDependentButtons) {
       val.disabled = disabled;
     }
-    for(const button of this.playbackButtons) {
-      button.disabled = (this.previousAttempt == null || disabled);
-    }
   }
 
   startRound() {
@@ -216,10 +156,10 @@ class ProdTrain {
     this.stimuliToneLabel.innerHTML = stim['tone'];
 
     //test ui vs train ui
-    this.testUI.style.display = stim['type'] == 'test'?'block':'none';
-    this.trainUI.style.display = stim['type'] == 'train'?'block':'none';
+    this.exButton.style.visibility = stim['type'] == 'test'?'hidden':'visible';
+    this.trainUI.style.display = stim['type'] == 'test'?'none':'block';
 
-    this.previousAttempt = null;
+    this.resetPb();
     this.changeState('ready');
   }
 
@@ -236,7 +176,7 @@ class ProdTrain {
     this.startTimer();
     this.round = 0;
     this.stimIdx = 0;
-    this.attemptVolume = 1.0;
+    if(this.share.get('micGain') == null) this.share.save('micGain',1.0);
     this.startRound();
   }
 

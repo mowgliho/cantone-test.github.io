@@ -125,3 +125,74 @@ function uploadFiles(keys, d, id, name) {
     if(keys.length > 0) uploadFiles(keys, d, id, name);
   }
 }
+
+//returns a record and a playback button that are linked appropriately
+definePlayback = function(doc, recordTime, startFn, recordedCallback, playbackCallback, volFn) {
+  const recordButton = doc.create('button','Record',null);
+  const playbackButton = doc.create('button','Play Attempt',null);
+  
+  const h = {
+    prevAttempt: null,
+    audioContext: null
+  }
+
+  const reset = function() {
+    h['prevAttempt'] = null;
+    recordButton.disabled = false;
+    playbackButton.disabled = true;
+  };
+
+
+  record = function(aContext, stream) {
+    startFn();
+    recordButton.disabled = true;
+    playbackButton.disabled = true;
+
+    h['audioContext'] = aContext;
+    const chunks = []; 
+    const recorder = new MediaRecorder(stream);
+    recorder.addEventListener('dataavailable', function(e) {
+      if (e.data.size > 0) chunks.push(e.data);
+    }); 
+
+    recorder.addEventListener('stop', function() {
+      let reader = new FileReader();
+      reader.onloadend = function() {
+        h['audioContext'].decodeAudioData(reader.result).then( (audioBuffer) => {
+          h['prevAttempt'] = audioBuffer;
+          recordButton.disabled = false;
+          playbackButton.disabled = false;
+          recordedCallback();
+        })
+      };  
+      reader.readAsArrayBuffer(new Blob(chunks));
+    }); 
+    recorder.start();
+
+    setTimeout(function() {recorder.stop()},recordTime * 1000);
+  }
+
+  playback = function() {
+    startFn();
+    recordButton.disabled = true;
+    playbackButton.disabled = true;
+
+    const node = h['audioContext'].createBufferSource();
+    node.buffer = h['prevAttempt'];
+    const gainNode = h['audioContext'].createGain();
+    gainNode.gain.value = volFn();
+  
+    node.connect(gainNode).connect(h['audioContext'].destination);
+    node.addEventListener('ended', function() {
+      playbackCallback(); 
+      recordButton.disabled = false;
+      playbackButton.disabled = false;
+    });
+    node.start();
+  }
+
+  recordButton.onclick = getAudioStream(function(audioContext, stream) { record(audioContext, stream);});
+  playbackButton.onclick = function() {playback()};
+
+  return {record: recordButton, playback: playbackButton, reset: reset};
+}
