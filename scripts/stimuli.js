@@ -22,6 +22,10 @@ class Stimuli {
     return {sources: sourceStimuli, targets: targetStimuli};
   }
 
+  static getListenTestStimuli(n) {
+    return shuffleArray(['1','2','3','4','5','6'].map((a) => ['si' + a, 'jiu' + a]).reduce((a,b) => a.concat(b),[]));
+  }
+
   static getTones(tones) {
     let ret = [];
     for(var i = 0; i < tones.length; i++) {

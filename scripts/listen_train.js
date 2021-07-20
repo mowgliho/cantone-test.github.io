@@ -154,30 +154,8 @@ class ListenTrain {
 
   finish() {
     this.nextButton.style.display = 'none';
-    this.uploadFiles(Object.keys(this.data));
+    uploadFiles(Object.keys(this.data), this.data, this.share.get('id'), 'listen_train');
     this.manager.next();
-  }
-
-  uploadFiles(keys) {
-    const that = this;
-
-    const key = keys.pop();
-    if(this.data[key].length > 0) {
-      let data = this.data[key];
-      let cols = Object.keys(data[0]);
-      const id = this.share.get('id');
-
-      var body = id + '_listen_train_' + key + '.tsv\n';
-      body += cols.join('\t') + '\n'
-      for(var row of data) {
-        body += cols.map((a) => row[a]).join('\t') + '\n'
-      }
-      fetch(Config.plainTextCgi, { method: 'POST', body: body}).then(
-        (response) => {response.text().then(function(x) {console.log(x); if(keys.length > 0) that.uploadFiles(keys);})}).catch(
-        (error) => {console.log("error", error)});
-    } else {
-      if(keys.length > 0) this.uploadFiles(keys);
-    }
   }
 
   start() {}

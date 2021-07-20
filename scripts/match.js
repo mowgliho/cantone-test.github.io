@@ -71,7 +71,7 @@ class Match {
       this.clickBoxes.push(Match.clickBox(
         'source',
         0, Match.buttonWidth, startY, endY,
-        function() {return that.interpolateColor(Match.colorText['canPlay']['color'], Match.colorText['cantPlay']['color'], that.sources[boxId]['playCount'], that.sources[boxId]['max'])}, 
+        function() {return interpolateColor(Match.colorText['canPlay']['color'], Match.colorText['cantPlay']['color'], that.sources[boxId]['playCount'], that.sources[boxId]['max'])}, 
         function() {const count = that.sources[boxId]['playCount']; return count  > 0? Match.colorText['canPlay']['text']: ''}, 
         function() {that.play('source',boxId,that.sources[boxId])},
         function() {return true;}
@@ -106,7 +106,7 @@ class Match {
       this.clickBoxes.push(Match.clickBox(
         'ref',
         this.canvas.width - Match.buttonWidth, this.canvas.width, startY, endY,
-        function() {return that.interpolateColor(Match.colorText['canPlay']['color'], Match.colorText['cantPlay']['color'], that.targets[boxId]['playCount'], that.targets[boxId]['max'])}, 
+        function() {return interpolateColor(Match.colorText['canPlay']['color'], Match.colorText['cantPlay']['color'], that.targets[boxId]['playCount'], that.targets[boxId]['max'])}, 
         function() {const count = that.targets[boxId]['playCount']; return count  > 0? Match.colorText['canPlay']['text']: ''}, 
         function() { if(!that.refOnlyAtCorrect || that.state == 'correct') that.play('target',boxId,that.targets[boxId]);},
         function() { return (!that.refOnlyAtCorrect || that.state == 'correct');}
@@ -122,16 +122,6 @@ class Match {
       this.usageData['play'].push({id: this.id, type: type, boxId: boxId, syl: syl, time: (new Date()).getTime()});
     }
     if(info['playCount'] > 0 && info['max'] != -1) info['playCount'] -= 1;
-  }
-
-  //j is count from end, not from start
-  interpolateColor(start, end, j, n) {
-    let arr = [];
-    for(var i = 0; i < start.length; i++) {
-      if(n == -1) arr.push(start[i]);
-      else arr.push(start[i] + (end[i]-start[i])*(n-j)/n);
-    }
-    return 'rgba(' + arr.join(',') + ')';
   }
 
   paint() {

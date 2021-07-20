@@ -49,4 +49,9 @@ class AudioFiles {
   listenTrain(syl) {
     return 'wav/humanum/' + syl + '.wav';
   }
+
+  listenTest(syl) {
+    return 'wav/humanum/' + syl + '.wav';
+  }
+
 }

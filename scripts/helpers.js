@@ -96,3 +96,32 @@ function getAnalyzer(audioContext, stream) {
   audioContext.createMediaStreamSource(stream).connect(analyzer)
   return analyzer;
 }
+
+  //j is count from end, not from start
+function  interpolateColor(start, end, j, n) {
+  let arr = [];
+  for(var i = 0; i < start.length; i++) {
+    if(n == -1) arr.push(start[i]);
+    else arr.push(start[i] + (end[i]-start[i])*(n-j)/n);
+  }
+  return 'rgba(' + arr.join(',') + ')';
+}
+
+function uploadFiles(keys, d, id, name) {
+  const key = keys.pop();
+  if(d[key].length > 0) {
+    let data = d[key];
+    let cols = Object.keys(data[0]);
+
+    var body = id + '_' + name + '_' + key + '.tsv\n';
+    body += cols.join('\t') + '\n'
+    for(var row of data) {
+      body += cols.map((a) => row[a]).join('\t') + '\n'
+    }
+    fetch(Config.plainTextCgi, { method: 'POST', body: body}).then(
+      (response) => {response.text().then(function(x) {console.log(x); if(keys.length > 0) uploadFiles(keys, d, id, name);})}).catch(
+      (error) => {console.log("error", error)});
+  } else {
+    if(keys.length > 0) uploadFiles(keys, d, id, name);
+  }
+}

@@ -11,7 +11,7 @@ class TestManager {
     'listen_test',
     'prod_train',
     'prod_test',
-    'questionnaire',
+    'feedback',
   ];
 
   classes = {
@@ -23,9 +23,10 @@ class TestManager {
     mic_test: MicTest,
     task_intro: TaskIntro,
     listen_train: ListenTrain,
-    listen_test: null,
+    listen_test: ListenTest,
     prod_train: null,
     prod_test: null,
+    feedback: null
   }
 
   constructor(doc, div) {
