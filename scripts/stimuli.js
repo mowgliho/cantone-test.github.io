@@ -12,9 +12,9 @@ class Stimuli {
   }
 
   static prodTrain = {
-    level: ['laai','ze','wui','gwan','sing','faan'],
-    contour: ['hang','waan','wun','nin','cin','cung'],
-    all: ['hon','ham','hau','jiu','joeng','soeng','se']
+    level: ['laai','ze','wui','gwan'],
+    contour: ['hang','waan','wun','nin'],
+    all: ['hon','ham','hau','jiu','joeng']
   }
 
   //returns array: source goes to source syllables; target goes to an array of dicts, which point to tone and syl 

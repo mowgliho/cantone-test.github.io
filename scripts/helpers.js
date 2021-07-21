@@ -162,7 +162,7 @@ definePlayback = function(doc, recordTime, startFn, recordedCallback, playbackCa
           h['prevAttempt'] = audioBuffer;
           recordButton.disabled = false;
           playbackButton.disabled = false;
-          recordedCallback();
+          recordedCallback(audioBuffer);
         })
       };  
       reader.readAsArrayBuffer(new Blob(chunks));

@@ -4,6 +4,13 @@ class ProdTrain {
   canvasWidth = 500;
   canvasHeight = 500;
   canvasText = 15;
+  //vocoded params
+  vocodedUISpacing = '20px';
+  vocodeTryWidth = 500;
+  tuneTime = 2;
+  matchTime = 2;
+  maxMatchTime = 10;
+
 
   timeLeft = 900*1000;//amount of time for the task.
   stimuli = Stimuli.getProdTrainStimuli(1, 51);
@@ -75,9 +82,11 @@ class ProdTrain {
 
     this.exButton = this.getExemplarButton(doc);
 
+    let trainPb = this.buildPlayback(doc);
+    this.resetPb = trainPb['reset'];
     this.trainUI = doc.create('div',null,trainDiv);
     if(this.visType != 'none') {
-      let canvasDiv = doc.create('div',null,this.trainUI);
+      let canvasDiv = doc.create('div',null,null);
       let canvas = doc.create('canvas',null,canvasDiv);
       canvas.width = this.canvasWidth;
       canvas.height = this.canvasHeight;
@@ -85,13 +94,39 @@ class ProdTrain {
       canvasDiv.style.height = this.canvasHeight + 'px';
       canvasDiv.style.border = '1px solid';
       this.visCanvas = canvas;
-    }
 
-    if(this.audioType == 'exemplar') {
-      let trainPb = this.buildPlayback(doc);
-      this.resetPb = trainPb['reset'];
-      let buttonBar = this.getButtonBar(doc, [this.exButton, trainPb['record'], trainPb['playback']]);
-      trainDiv.appendChild(buttonBar);
+      if(this.audioType == 'exemplar') {
+        this.trainUI.appendChild(canvasDiv);
+        let buttonBar = this.getButtonBar(doc, [this.exButton, trainPb['record'], trainPb['playback']]);
+        trainDiv.appendChild(buttonBar);
+      } else {//vocoded
+        this.tuners = {};
+        for(const x of ['start','end']) {
+          let outerDiv = doc.create('div',null,this.trainUI);
+          let label = doc.create('label',x.charAt(0).toUpperCase() + x.slice(1) + ':',outerDiv);
+          label.style.backgroundColor = '#BCB88A';
+          let tuner = new Tuning(doc, this.share, this.tuneTime, this.matchTime, this.matchMaxTime, this);
+          let innerDiv = tuner.getDiv();
+          outerDiv.appendChild(innerDiv);
+          let button = doc.create('button','Adjusted ' + x,outerDiv);
+          button.style.width = '100%';
+          outerDiv.style.width = tuner.getWidth() + 'px';
+          outerDiv.style.display = 'inline-block';
+          let span = doc.create('span', null, this.trainUI);
+          span.style.width = this.vocodedUISpacing;
+          span.style.display = 'inline-block';
+        }
+        //try canvas
+        let tryDiv = doc.create('div',null,this.trainUI);
+        tryDiv.style.display = 'inline-block';
+        let label = doc.create('label','Try:',tryDiv);
+        label.style.backgroundColor = '#BCB88A';
+        tryDiv.appendChild(canvasDiv);
+        let vocodedButton = this.getVocodedButton(doc);
+        tryDiv.appendChild(this.getButtonBar(doc, [this.exButton, vocodedButton]));
+        tryDiv.appendChild(this.getButtonBar(doc, [trainPb['record'], trainPb['playback']]));
+        doc.create('p',null,trainDiv);
+      }
     }
 
     //control playback volume
@@ -130,15 +165,32 @@ class ProdTrain {
     return button;
   }
 
+  getVocodedButton(doc) {
+    const that = this;
+
+    let button = doc.create('button','Adjusted to your range',null); 
+    this.stateDependentButtons.push(button);
+    button.onclick = function() {that.playVocoded()};
+    return button;
+  }
+
   buildPlayback(doc) {
     const that = this;
 
     const volFn = function() {return that.share.get('micGain');};
     const startFn = function() {that.changeState('busy');};
-    const recordedCallback = function() {that.changeState('ready')};
+    const recordedCallback = function(buffer) { that.changeState('ready')};
     const playbackCallback = function() {that.changeState('ready')};
 
-    return definePlayback(doc, this.recordTime, startFn, recordedCallback, playbackCallback, volFn);
+    let ret = definePlayback(doc, this.recordTime, startFn, recordedCallback, playbackCallback, volFn);
+    this.stateDependentButtons.push(ret['record']);
+    this.stateDependentButtons.push(ret['playback']);
+
+    return ret;
+  }
+
+  playVocoded() {
+    console.log('play vocoded');
   }
 
   playExemplar() {
@@ -173,7 +225,8 @@ class ProdTrain {
     this.exButton.style.visibility = stim['type'] == 'test'?'hidden':'visible';
     this.trainUI.style.display = stim['type'] == 'test'?'none':'block';
 
-    if(this.visType != null && this.audioType == 'exemplar') {
+    //update audio stuff
+    if(this.visType != null) {
       ToneContours.paintContour(this.visCanvas, this.visType, ['t' + stim['tone']], this.canvasText);
     }
     this.resetPb();

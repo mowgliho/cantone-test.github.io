@@ -42,6 +42,10 @@ class Tuning {
     this.update();
   }
 
+  getWidth() {
+    return Tuning.width;
+  }
+
   set(mean, z, sd) {
     this.state = 'ready';
     this.mean = mean;
