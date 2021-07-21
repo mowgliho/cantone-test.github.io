@@ -51,12 +51,18 @@ class ToneContours {
     div.style.height = height + 'px';
     if(type != 'none')div.style.border = '1px solid';
 
+    ToneContours.paintContour(canvas, type, tones, textSize);
+    return div;
+  }
+
+  static paintContour(canvas, type, tones, textSize) {
     //plot
     let margin = 0.1;
     let ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
     if(type == 'none') {//do nothing
     } else if(type == 'idealized' || type == 'data') {
-      let numPts = Math.floor(width/2);
+      let numPts = Math.floor(canvas.width/2);
       let contours = ToneContours.tones.map((t) => type == 'idealized'? ToneContours.getIdealizedContour(t, numPts, 1): ToneContours.getCubicContour(t, numPts, 1));
       const maxT = contours.reduce((a,contour) => Math.max(a, contour.reduce((b,c) => Math.max(b,c[0]),0)),0)
       const maxY = contours.reduce((a,contour) => Math.max(a, contour.reduce((b,c) => Math.max(b,c[1]),0)),0)
@@ -79,6 +85,5 @@ class ToneContours {
         ctx.fillText(t, x(contour[textIdx][0]), y(contour[textIdx][1]));
       }
     }
-    return div;
   }
 }

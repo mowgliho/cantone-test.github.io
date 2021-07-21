@@ -1,6 +1,9 @@
 class ProdTrain {
   buttonBarWidth = 500;
   recordTime = 2;
+  canvasWidth = 500;
+  canvasHeight = 500;
+  canvasText = 15;
 
   timeLeft = 900*1000;//amount of time for the task.
   stimuli = Stimuli.getProdTrainStimuli(1, 51);
@@ -73,6 +76,17 @@ class ProdTrain {
     this.exButton = this.getExemplarButton(doc);
 
     this.trainUI = doc.create('div',null,trainDiv);
+    if(this.visType != 'none') {
+      let canvasDiv = doc.create('div',null,this.trainUI);
+      let canvas = doc.create('canvas',null,canvasDiv);
+      canvas.width = this.canvasWidth;
+      canvas.height = this.canvasHeight;
+      canvasDiv.style.width = this.canvasWidth + 'px';
+      canvasDiv.style.height = this.canvasHeight + 'px';
+      canvasDiv.style.border = '1px solid';
+      this.visCanvas = canvas;
+    }
+
     if(this.audioType == 'exemplar') {
       let trainPb = this.buildPlayback(doc);
       this.resetPb = trainPb['reset'];
@@ -159,6 +173,9 @@ class ProdTrain {
     this.exButton.style.visibility = stim['type'] == 'test'?'hidden':'visible';
     this.trainUI.style.display = stim['type'] == 'test'?'none':'block';
 
+    if(this.visType != null && this.audioType == 'exemplar') {
+      ToneContours.paintContour(this.visCanvas, this.visType, ['t' + stim['tone']], this.canvasText);
+    }
     this.resetPb();
     this.changeState('ready');
   }
