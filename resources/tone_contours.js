@@ -1,5 +1,6 @@
 class ToneContours {
   static tones = ['t1','t2','t3','t4','t5','t6'];
+  static margin = 0.1;
 
   static idealizedChao = {
     t1: [5,5],
@@ -57,7 +58,6 @@ class ToneContours {
 
   static paintContour(canvas, type, tones, textSize) {
     //plot
-    let margin = 0.1;
     let ctx = canvas.getContext('2d');
     ctx.clearRect(0,0,canvas.width,canvas.height);
     if(type == 'none') {//do nothing
@@ -67,12 +67,14 @@ class ToneContours {
       const maxT = contours.reduce((a,contour) => Math.max(a, contour.reduce((b,c) => Math.max(b,c[0]),0)),0)
       const maxY = contours.reduce((a,contour) => Math.max(a, contour.reduce((b,c) => Math.max(b,c[1]),0)),0)
       const minY = contours.reduce((a,contour) => Math.min(a, contour.reduce((b,c) => Math.min(b,c[1]),0)),0)
-      let x = (t) => (margin/2 + (t/maxT)*(1-margin - textSize/canvas.width))*canvas.width;
-      let y = (st) => (1-(margin/2 + (st-minY)/(maxY-minY)*(1-margin)))*canvas.height;
+      let x = (t) => (ToneContours.margin/2 + (t/maxT)*(1-ToneContours.margin - textSize/canvas.width))*canvas.width;
+//      let y = (st) => (1-(ToneContours.margin/2 + (st-minY)/(maxY-minY)*(1-ToneContours.margin)))*canvas.height;
+      let y = (st) => (1-(0.5 + (st)/(ToneContours.canvasHeightSd)*(1-ToneContours.margin)))*canvas.height;
       for(var i = 0; i < ToneContours.tones.length; i++) {
         let t = ToneContours.tones[i];
         let contour = contours[i];
         ctx.setLineDash((tones != null && !(tones.includes(t)))?[5,15]:[]);
+        ctx.strokeStyle = 'black';
         ctx.beginPath();
         ctx.moveTo(x(contour[0][0]), y(contour[0][1]));
         for(var j = 1; j < contour.length; j++) {
@@ -84,6 +86,53 @@ class ToneContours {
         ctx.textBaseline = type == 'idealized'? 'top':'middle';
         ctx.fillText(t, x(contour[textIdx][0]), y(contour[textIdx][1]));
       }
+      let maxTs = {};
+      for(var [i,tone] of ToneContours.tones.entries()) maxTs[tone] = contours[i].reduce((a,b) => Math.max(a,b[0]),0);
+      return {x: x, y: y, maxTs: maxTs};
     }
   }
+
+  static freqToSemitone(freq) {
+    return Math.log2(freq/440)*12 + 49;
+  }
+
+  static semitoneArrayToFreq(st) {
+    const ret = new Array(st.length);
+    for(var i = 0; i < st.length; i++) {
+      ret[i] = ToneContours.semitoneToFreq(st[i]);
+    }
+    return ret;
+  }
+
+  static semitoneToFreq(st) {
+    return Math.pow(2,(st - 49)/12)*440;
+  }
+
+  static freqArrayToSemitone(freq, shift) {//shift in semitones
+    const ret = new Array(freq.length);
+    for(var i = 0; i < freq.length; i++) {
+      ret[i] = ToneContours.freqToSemitone(freq[i]) + shift;
+    }
+    return ret;
+  }
+
+  //from looking at humanum data
+  static humanumMean = 38.1//in semitones
+  static humanumSt = 3.5;
+  static canvasHeightSd = 6;
+
+  static humanumTuneSts = {
+    start:{'1':45, '2':35,'3':40,'4':37,'5':34,'6':37},
+    end:{'1':45, '2':42.5,'3':40,'4':29,'5':37.5,'6':35}
+  }
+  
+  static getHumanumShift(st) {
+    return st - ToneContours.humanumMean 
+  }
+
+  static getTuningHumanumSt(st, tone, type) {
+    let shift = ToneContours.getHumanumShift(st);
+    return ToneContours.humanumTuneSts[type][tone] + shift;
+  }
+
 }

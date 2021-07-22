@@ -61,17 +61,26 @@ class Tuning {
   guide() {
     const that = this;
 
-    this.state = 'guiding';
     this.update();
     getAudioStream(function(audioContext, stream) {
-      that.parent.tunerStarted(that);
       const node = Tuning.createNode(audioContext, that.target);
-      const gain= audioContext.createGain();
+      const gain = audioContext.createGain();
       gain.gain.value = that.gain; 
-      node.connect(gain).connect(audioContext.destination);
-      that.share.addTimeout(setTimeout(function() {that.tune(node, audioContext, stream)},that.tuningDur*1000));
-      node.start();
+      node.connect(gain);
+      that.guideNode(node, gain, audioContext, stream, true);
     })();
+  }
+  
+  guideNode(node, toConnect, audioContext, stream, endByEvent) {
+    const that = this;
+
+    this.state = 'guiding';
+    this.parent.tunerStarted(this);
+    toConnect.connect(audioContext.destination);
+    if(endByEvent) that.share.addTimeout(setTimeout(function() {that.tune(node, audioContext, stream)},that.tuningDur*1000));
+    else node.onended = function() {that.tune(node, audioContext,stream)};
+    node.start();
+    this.update();
   }
 
   tune(node, audioContext, stream) {
@@ -86,7 +95,7 @@ class Tuning {
     const analyzer = getAnalyzer(audioContext, stream);
     let data = new Float32Array(analyzer.fftSize)
     const sampleRate = audioContext.sampleRate;
-    const smoother = Tuning.getSmoother(Tuning.smoothLength, Tuning.smoothThreshold);
+    const smoother = getSmoother(Tuning.smoothLength, Tuning.smoothThreshold);
     var idx = 0;
     const attempts = new Array(Math.round((1000*this.matchDur)/this.measurementInterval)).fill(NaN);
     const contour = [];
@@ -181,26 +190,5 @@ class Tuning {
     ctx.lineTo(canvas.width, (1-y)*canvas.height);
     ctx.strokeStyle = color;
     ctx.stroke();
-  }
-  
-  //if zero, only add to the array if had more than zeroThreshold in a row
-  static getSmoother = (size, zeroThreshold) => {
-    var idx = 0;
-    var active = false;
-    const array = new Array(size);
-    var zeroCount = 0;
-
-    return(function(val) {
-      if(val == 0) zeroCount += 1;
-      else zeroCount = 0;
-
-      if(val != 0 || zeroCount > zeroThreshold) {
-        array[idx] = val;
-        idx = (idx + 1) % size;
-        if(idx == 0) active = true;
-      }
-      if(!active) return(null);
-      return(array.reduce((a,b) => a + b)/size);
-    });
   }
 }

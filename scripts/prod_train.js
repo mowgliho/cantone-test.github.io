@@ -1,4 +1,7 @@
 class ProdTrain {
+  minF0 = 50;
+  maxF0 = 750;
+  worldParam = 16;
   buttonBarWidth = 500;
   recordTime = 2;
   canvasWidth = 500;
@@ -9,11 +12,13 @@ class ProdTrain {
   vocodeTryWidth = 500;
   tuneTime = 2;
   matchTime = 2;
-  maxMatchTime = 10;
+  matchMaxTime = 10;
+  smoothLength = 10;
+  smoothThreshold = 10;
 
 
   timeLeft = 900*1000;//amount of time for the task.
-  stimuli = Stimuli.getProdTrainStimuli(1, 51);
+  stimuli = Stimuli.getProdTrainStimuli(1, 27);
 
   constructor(manager, doc, div, audio, share) {
     this.audio = audio;
@@ -22,12 +27,18 @@ class ProdTrain {
 
     this.visType = this.share.get('visual');
     this.audioType = this.share.get('audio');
+    this.mean = parseFloat(this.share.get('st'));
 
     let header = doc.create('h2','Production Training ',div);
     this.timerLabel = doc.create('label',null,header);
     doc.create('hr',null,div);
     
     this.stateDependentButtons = [];
+
+    if(this.audioType == 'vocoded') {
+      this.vocoder = new WorldVocoder(this, this.tuneTime, this.mean);
+    }
+
     this.buildIntroDiv(doc, div);
     this.buildTrainDiv(doc, div, audio);
   }
@@ -68,6 +79,9 @@ class ProdTrain {
   buildTrainDiv(doc, div) {
     const that = this;
     
+    this.adjustAudioDiv = doc.create('div',null, div);
+    this.adjustLabel = doc.create('h3',null,this.adjustAudioDiv);
+
     let trainDiv = doc.create('div',null,div);
 
     //round and stimuli label
@@ -84,6 +98,8 @@ class ProdTrain {
 
     let trainPb = this.buildPlayback(doc);
     this.resetPb = trainPb['reset'];
+    this.offPb = trainPb['off'];
+    this.onPb = trainPb['on'];
     this.trainUI = doc.create('div',null,trainDiv);
     if(this.visType != 'none') {
       let canvasDiv = doc.create('div',null,null);
@@ -109,12 +125,15 @@ class ProdTrain {
           let innerDiv = tuner.getDiv();
           outerDiv.appendChild(innerDiv);
           let button = doc.create('button','Adjusted ' + x,outerDiv);
+          this.stateDependentButtons.push(button);
           button.style.width = '100%';
+          button.onclick = function() {that.tuneVocoded(x)};
           outerDiv.style.width = tuner.getWidth() + 'px';
           outerDiv.style.display = 'inline-block';
           let span = doc.create('span', null, this.trainUI);
           span.style.width = this.vocodedUISpacing;
           span.style.display = 'inline-block';
+          this.tuners[x] = tuner;
         }
         //try canvas
         let tryDiv = doc.create('div',null,this.trainUI);
@@ -145,6 +164,10 @@ class ProdTrain {
     this.trainDiv = trainDiv;
   }
 
+  vocoderActive() {
+    console.log('vocoder active');
+  }
+
   getButtonBar(doc, buttons) {
     let div = doc.create('div',null,null);
     div.style.width = this.buttonBarWidth + 'px';
@@ -170,7 +193,11 @@ class ProdTrain {
 
     let button = doc.create('button','Adjusted to your range',null); 
     this.stateDependentButtons.push(button);
-    button.onclick = function() {that.playVocoded()};
+    button.onclick = function() {
+      that.changeState('busy');
+      let [node,audioContext] = that.getVocoded('char'); 
+      node.onended = function() {that.changeState('ready')};
+      node.start();};
     return button;
   }
 
@@ -178,19 +205,39 @@ class ProdTrain {
     const that = this;
 
     const volFn = function() {return that.share.get('micGain');};
-    const startFn = function() {that.changeState('busy');};
-    const recordedCallback = function(buffer) { that.changeState('ready')};
+    const startFn = function() {
+      for(var tuner of Object.values(that.tuners)) tuner.deactivate();
+      that.changeState('busy');
+    };
+    const recordedCallback = function(buffer) { 
+      const sampleRate = buffer.sampleRate;
+      const array = combineChannels(buffer);
+      that.changeState('ready');
+      for(var tuner of Object.values(that.tuners)) tuner.reactivate();
+      let contour = that.vocoder.getF0Contour(array, sampleRate,that.worldParam).f0.filter(f => (f > that.minF0 && f < that.maxF0));
+      if(contour.length > 0) that.plotAttemptContour(contour);
+    };
     const playbackCallback = function() {that.changeState('ready')};
 
     let ret = definePlayback(doc, this.recordTime, startFn, recordedCallback, playbackCallback, volFn);
-    this.stateDependentButtons.push(ret['record']);
-    this.stateDependentButtons.push(ret['playback']);
 
     return ret;
   }
 
-  playVocoded() {
-    console.log('play vocoded');
+  tuneVocoded(type) {
+    const that = this;
+
+    getAudioStream(function(a, stream) {
+      let tuner = that.tuners[type];
+      that.tunerStarted(tuner);
+      let [node, audioContext] = that.getVocoded(type);
+      tuner.guideNode(node, node, audioContext, stream, false)
+    })();
+  }
+
+  getVocoded(type) {
+    const [node, duration, audioContext] = this.adjustedAudio[this.stimuli[this.stimIdx]['syl']][type]();
+    return [node, audioContext];
   }
 
   playExemplar() {
@@ -212,6 +259,8 @@ class ProdTrain {
     for(const val of this.stateDependentButtons) {
       val.disabled = disabled;
     }
+    if(disabled) this.offPb();
+    else this.onPb();
   }
 
   startRound() {
@@ -229,8 +278,59 @@ class ProdTrain {
     if(this.visType != null) {
       ToneContours.paintContour(this.visCanvas, this.visType, ['t' + stim['tone']], this.canvasText);
     }
+
+    if(this.audioType == 'vocoded') {
+      for(const [type,tuner] of Object.entries(this.tuners)) {
+        const st = ToneContours.getTuningHumanumSt(this.mean, stim['tone'], type);
+        const z = (st - this.mean)/ToneContours.humanumSt;
+        tuner.set(this.mean, z, ToneContours.humanumSt);
+      }
+    }
+    
     this.resetPb();
     this.changeState('ready');
+  }
+
+  plotAttemptContour(contour) {
+    let stContour = ToneContours.freqArrayToSemitone(contour, -this.mean).map((a) => a/ToneContours.humanumSt);;
+    const smoother = getSmoother(this.smoothLength, this.smoothThreshold);
+    var smoothed = [];
+    for(const x of stContour) smoothed.push(smoother(x));
+    smoothed = smoothed.filter(st => (st != null));
+    if(smoothed.length == 0) return;
+    let tone = 't' + this.stimuli[this.stimIdx]['tone'];
+    let ret = ToneContours.paintContour(this.visCanvas, this.visType, [tone], this.canvasText);
+    let canvas = this.visCanvas;
+    let ctx = canvas.getContext('2d');
+    ctx.beginPath();
+    ctx.strokeStyle = 'green';
+    ctx.setLineDash([]);
+    var started = false;
+    for(const [i, val] of stContour.entries()) {
+      let x = ret['x'](i/stContour.length*ret['maxTs'][tone]);
+      let y = ret['y'](val);
+      if(!started) {
+        started = true;
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  tunerStarted(t) {
+    this.changeState('busy');
+    for(var tuner of Object.values(this.tuners)) {
+      if(tuner != t) tuner.deactivate();
+    }
+  }
+
+  tunerFinished(t, mean, z, contour) {
+    this.changeState('ready');
+    for(var tuner of Object.values(this.tuners)) {
+      tuner.reactivate();
+    }
   }
 
   nextRound() {
@@ -239,14 +339,40 @@ class ProdTrain {
     this.startRound();
   }
 
+  adjustAudio() {
+    const that = this;
+
+    this.trainDiv.style.display = 'none'
+    this.adjustAudioDiv.style.display = 'block';
+    this.adjustLabel.innerHTML = 'asdf';
+    const chars = this.stimuli.map((a) => { return {syl: a['syl'], tone: a['tone']}});
+    var idx = 0;
+    this.adjustedAudio = {};
+    let loadAudio = function() {
+      that.adjustLabel.innerHTML = 'Adjusting syllable ' + (idx + 1) + '/' + chars.length + '...';
+      that.vocoder.loadCharacter(chars[idx]['syl'], chars[idx]['tone'], function(ret) {
+        that.adjustedAudio[chars[idx]['syl']] = ret;
+        idx += 1;
+        if(idx < chars.length) loadAudio();
+        else that.startTrain();
+      });
+    };
+    loadAudio();
+  }
+
   startTraining() {
-    //set up timer
     this.introDiv.style.display = 'none';
+    if(this.share.get('micGain') == null) this.share.save('micGain',1.0);
+    if(this.audioType == 'vocoded') this.adjustAudio();
+    else this.startTrain();
+  }
+
+  startTrain() {
     this.trainDiv.style.display = 'block';
+    //set up timer
     this.startTimer();
     this.round = 0;
     this.stimIdx = 0;
-    if(this.share.get('micGain') == null) this.share.save('micGain',1.0);
     this.startRound();
   }
 
@@ -254,21 +380,21 @@ class ProdTrain {
     const that = this;
 
     this.endTime = (new Date()).getTime() + this.timeLeft;
-    this.share.addTimeout(setInterval(function() {
+    this.timerTO = setInterval(function() {
       let time = (new Date()).getTime();
       if(that.endTime < time) {
-        that.share.clearTimeouts();
+        clearTimeout(that.timerTO);
         that.finish();
       } else {
         let timeLeft = that.endTime - time;
         that.timerLabel.innerHTML = '(' + ProdTrain.getDisplay(timeLeft) + ' minutes remaining)';
         that.timerLabel.style.color = timeLeft < 60000?'red':'black';
       }
-    }, 1000));
+    }, 1000);
   }
 
   stopTimer() {
-    this.share.clearTimeouts();
+    clearTimeout(that.timerTO);
     this.timeLeft= this.endTime - (new Date()).getTime();
   }
 

@@ -142,6 +142,15 @@ definePlayback = function(doc, recordTime, startFn, recordedCallback, playbackCa
     playbackButton.disabled = true;
   };
 
+  const off = function() {
+    recordButton.disabled = true;
+    playbackButton.disabled = true;
+  }
+
+  const on = function() {
+    recordButton.disabled = false;
+    playbackButton.disabled = h['prevAttempt'] == null;
+  }
 
   record = function(aContext, stream) {
     startFn();
@@ -194,5 +203,52 @@ definePlayback = function(doc, recordTime, startFn, recordedCallback, playbackCa
   recordButton.onclick = getAudioStream(function(audioContext, stream) { record(audioContext, stream);});
   playbackButton.onclick = function() {playback()};
 
-  return {record: recordButton, playback: playbackButton, reset: reset};
+  return {record: recordButton, playback: playbackButton, reset: reset, off: off, on: on};
 }
+
+//interval is in ms
+getFreq = function(buffer, interval) {
+  const fftSize = 2048;
+  let sampleRate = buffer['sampleRate'];
+  let length = buffer['length'];
+  let data = buffer.getChannelData(0);
+
+  freqs = [];
+  for(var i = 0; i <= Math.floor((length-fftSize)/(interval/1000*sampleRate)); i++) {
+    let start = i*(interval/1000*sampleRate);
+    freqs.push(yin(data.slice(start, start + fftSize),sampleRate));
+  }
+}
+
+combineChannels = function(audioBuffer) {
+  if(audioBuffer.numberOfChannels == 1) return audioBuffer.getChannelData(0);
+  let nChannels = audioBuffer.numberOfChannels;
+  var ret = new Float32Array(audioBuffer.length);
+  for(var i = 0; i < nChannels; i++) {
+    let d = audioBuffer.getChannelData(i);
+    for(var j = 0; j < d.length; j++) ret[j] += d[j]/nChannels;
+  }
+  return ret;
+}
+ 
+//if zero, only add to the array if had more than zeroThreshold in a row
+getSmoother = function(size, zeroThreshold) {
+  var idx = 0;
+  var active = false;
+  const array = new Array(size);
+  var zeroCount = 0;
+
+  return(function(val) {
+    if(val == 0) zeroCount += 1;
+    else zeroCount = 0;
+
+    if(val != 0 || zeroCount > zeroThreshold) {
+      array[idx] = val;
+      idx = (idx + 1) % size;
+      if(idx == 0) active = true;
+    }
+    if(!active) return(null);
+    return(array.reduce((a,b) => a + b)/size);
+  });
+}
+
