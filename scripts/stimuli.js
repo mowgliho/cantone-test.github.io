@@ -17,6 +17,13 @@ class Stimuli {
     all: ['hon','ham']
   }
 
+  static prodTest = [
+    {syl: 'jan', desc: 'This sound starts with a "y" sound, like the beginning of "you". The rest of the syllable rhymes with the "un" of "fun"'},
+    {syl: 'ji', desc: 'This sound is similar to the "ee" the English word "see".'},
+    {syl: 'si', desc: 'This sound is pronounced like the English words "see" and "sea".'},
+    {syl: 'fan', desc: 'This sound is pronounced like the English word "fun".'}
+  ]
+
   //returns array: source goes to source syllables; target goes to an array of dicts, which point to tone and syl 
   static getListenTrainStimuli(type, same, injective, nTrial) {
     let stimuli = Stimuli.listenTrain[type];
@@ -62,6 +69,16 @@ class Stimuli {
       }
       return stimuli;
     }
+  }
+
+  static getProdTestStimuli() {
+    let stimuli = [];
+    for(var s of Stimuli.prodTest) {
+      for(var t of Stimuli.tones['all']) {
+        stimuli.push({syl: s['syl'] + t, desc: s['desc'], tone: t});
+      }
+    }
+    return shuffleArray(stimuli);
   }
 
   static getTones(tones) {

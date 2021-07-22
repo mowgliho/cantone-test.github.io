@@ -158,10 +158,7 @@ class ProdTrain {
 
     //control playback volume
     let attemptVol = doc.create('div','Attempt playback volume: ',trainDiv);
-    let volUp = doc.create('button','up',attemptVol);
-    volUp.onclick = function() {that.share.save('micGain', that.share.get('micGain') * 3/2);};
-    let volDown = doc.create('button','down',attemptVol);
-    volDown.onclick = function() {that.share.save('micGain', that.share.get('micGain') * 2/3);};
+    getVolButtons(doc, this.share, attemptVol)
    
     //next button
     doc.create('hr',null,trainDiv);

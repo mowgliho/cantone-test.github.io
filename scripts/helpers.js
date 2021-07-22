@@ -261,3 +261,12 @@ getSmoother = function(size, zeroThreshold) {
   });
 }
 
+
+getVolButtons = function(doc, share, div) {
+  let volUp = doc.create('button','up',div);
+  volUp.onclick = function() {share.save('micGain', share.get('micGain') * 3/2);};
+  let volDown = doc.create('button','down',div);
+  volDown.onclick = function() {share.save('micGain', share.get('micGain') * 2/3);};
+
+  return {up: volUp, down: volDown};
+}

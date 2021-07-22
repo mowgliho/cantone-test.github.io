@@ -25,7 +25,7 @@ class TestManager {
     listen_train: ListenTrain,
     listen_test: ListenTest,
     prod_train: ProdTrain,
-    prod_test: null,
+    prod_test: ProdTest,
     feedback: null
   }
 
