@@ -127,7 +127,7 @@ function uploadFiles(keys, d, id, name) {
 }
 
 //returns a record and a playback button that are linked appropriately
-definePlayback = function(doc, recordTime, startFn, recordedCallback, playbackCallback, volFn) {
+definePlayback = function(doc, recordTime, intervalFn, startFn, recordedCallback, playbackCallback, volFn) {
   const recordButton = doc.create('button','Record',null);
   const playbackButton = doc.create('button','Play Attempt',null);
   
@@ -156,6 +156,7 @@ definePlayback = function(doc, recordTime, startFn, recordedCallback, playbackCa
     startFn();
     recordButton.disabled = true;
     playbackButton.disabled = true;
+    const timeouts = [];
 
     h['audioContext'] = aContext;
     const chunks = []; 
@@ -169,6 +170,7 @@ definePlayback = function(doc, recordTime, startFn, recordedCallback, playbackCa
       reader.onloadend = function() {
         h['audioContext'].decodeAudioData(reader.result).then( (audioBuffer) => {
           h['prevAttempt'] = audioBuffer;
+          for(var to of timeouts) clearTimeout(to);
           recordButton.disabled = false;
           playbackButton.disabled = false;
           recordedCallback(audioBuffer);
@@ -178,7 +180,13 @@ definePlayback = function(doc, recordTime, startFn, recordedCallback, playbackCa
     }); 
     recorder.start();
 
-    setTimeout(function() {recorder.stop()},recordTime * 1000);
+    if(intervalFn != null) {
+      let innerFn = intervalFn['fn'](aContext, stream);
+      let fn = function() { if(!innerFn()) recorder.stop()};
+      timeouts.push(setInterval(fn, intervalFn['interval']));
+    }
+
+    timeouts.push(setTimeout(function() {recorder.stop()},recordTime * 1000));
   }
 
   playback = function() {
@@ -211,13 +219,14 @@ getFreq = function(buffer, interval) {
   const fftSize = 2048;
   let sampleRate = buffer['sampleRate'];
   let length = buffer['length'];
-  let data = buffer.getChannelData(0);
+  let data = combineChannels(buffer);
 
   freqs = [];
   for(var i = 0; i <= Math.floor((length-fftSize)/(interval/1000*sampleRate)); i++) {
     let start = i*(interval/1000*sampleRate);
     freqs.push(yin(data.slice(start, start + fftSize),sampleRate));
   }
+  return freqs;
 }
 
 combineChannels = function(audioBuffer) {

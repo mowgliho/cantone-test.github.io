@@ -15,10 +15,14 @@ class ProdTrain {
   matchMaxTime = 10;
   smoothLength = 10;
   smoothThreshold = 10;
+  ambientMeasurementInterval = 20;
+  ambientDetectThreshold = 10;
+  ambientSilenceBuffer = 5;
+  ambientSilenceMin = -20;
 
 
   timeLeft = 900*1000;//amount of time for the task.
-  stimuli = Stimuli.getProdTrainStimuli(1, 27);
+  stimuli = Stimuli.getProdTrainStimuli(1, 50);
 
   constructor(manager, doc, div, audio, share) {
     this.audio = audio;
@@ -66,14 +70,17 @@ class ProdTrain {
     }
     doc.create('p', 'Some rounds will be "test rounds", in which you will only be able to record and hear your attempts. This is to help you internalize the tone contours and not rely on other aids.', this.introDiv);
 
+    doc.create('p', 'A screenshot is provided below. Click "Start Training" when you are ready.', this.introDiv);
+
+    let startButton = doc.create('button', 'Start Training!', this.introDiv);
+    startButton.onclick = function() {that.startTraining()};
+
     let screenshotDiv = doc.create('div',null,this.introDiv);
     doc.create('h4', 'Example Screenshot:', screenshotDiv);
     let image = doc.create('img',null, screenshotDiv);
     image.src = 'img/prod_train_' + this.visType + '_' + this.audioType + '.png';
     image.style.border = '1px solid';
 
-    let startButton = doc.create('button', 'Start!', this.introDiv);
-    startButton.onclick = function() {that.startTraining()};
  }
 
   buildTrainDiv(doc, div) {
@@ -101,6 +108,9 @@ class ProdTrain {
     this.offPb = trainPb['off'];
     this.onPb = trainPb['on'];
     this.trainUI = doc.create('div',null,trainDiv);
+    let buttonBar = this.getButtonBar(doc, [this.exButton, trainPb['record'], trainPb['playback']]);
+    trainDiv.appendChild(buttonBar);
+
     if(this.visType != 'none') {
       let canvasDiv = doc.create('div',null,null);
       let canvas = doc.create('canvas',null,canvasDiv);
@@ -113,8 +123,6 @@ class ProdTrain {
 
       if(this.audioType == 'exemplar') {
         this.trainUI.appendChild(canvasDiv);
-        let buttonBar = this.getButtonBar(doc, [this.exButton, trainPb['record'], trainPb['playback']]);
-        trainDiv.appendChild(buttonBar);
       } else {//vocoded
         this.tuners = {};
         for(const x of ['start','end']) {
@@ -205,24 +213,58 @@ class ProdTrain {
     const that = this;
 
     const volFn = function() {return that.share.get('micGain');};
-    const startFn = function() {
+
+    const startFn = this.audioType == 'vocoded'? function() {
       for(var tuner of Object.values(that.tuners)) tuner.deactivate();
       that.changeState('busy');
-    };
-    const recordedCallback = function(buffer) { 
+    }: function() {that.changeState('busy')};
+
+    const recordedCallback = this.audioType == 'vocoded'? function(buffer) {
+      const start = (new Date()).getTime();
       const sampleRate = buffer.sampleRate;
       const array = combineChannels(buffer);
       that.changeState('ready');
       for(var tuner of Object.values(that.tuners)) tuner.reactivate();
-      let contour = that.vocoder.getF0Contour(array, sampleRate,that.worldParam).f0.filter(f => (f > that.minF0 && f < that.maxF0));
+      let contour = that.vocoder.getF0Contour(array, sampleRate,that.worldParam).f0;
+      contour = contour.filter(f => (f > that.minF0 && f < that.maxF0));
       if(contour.length > 0) that.plotAttemptContour(contour);
-    };
+    }: function() { that.changeState('ready');};
+
     const playbackCallback = function() {that.changeState('ready')};
 
-    let ret = definePlayback(doc, this.recordTime, startFn, recordedCallback, playbackCallback, volFn);
+    let silence = Math.max(this.share.get('ambientDbfs') + this.ambientSilenceBuffer, this.ambientSilenceMin);
+    let ret = definePlayback(doc, this.recordTime, {fn: this.ambientNoise(silence,this.ambientDetectThreshold), interval: 20}, startFn, recordedCallback, playbackCallback, volFn);
 
     return ret;
   }
+
+  ambientNoise(silence, threshold) {
+    return function(audioContext, stream) {
+      const that = this;
+
+      let analyzer = getAnalyzer(audioContext, stream);
+      let data = new Float32Array(analyzer.fftSize)
+      var count = 0;
+      var on = false;
+
+      let calc = function() {
+        analyzer.getFloatTimeDomainData(data);
+        let dbfs = 20*Math.log10(Math.sqrt(data.reduce((a,b) => a + b**2,0)/data.length));
+        if(on == (dbfs < silence)) count += 1;
+        if(count > threshold) {
+          count = 0;
+          if(!on) {
+            on = true;
+          } else {
+            return false;
+          }
+        }
+        return true;
+      }
+      return calc;
+    }
+  }
+
 
   tuneVocoded(type) {
     const that = this;
@@ -275,7 +317,7 @@ class ProdTrain {
     this.trainUI.style.display = stim['type'] == 'test'?'none':'block';
 
     //update audio stuff
-    if(this.visType != null) {
+    if(this.visType != 'none') {
       ToneContours.paintContour(this.visCanvas, this.visType, ['t' + stim['tone']], this.canvasText);
     }
 
@@ -368,6 +410,7 @@ class ProdTrain {
   }
 
   startTrain() {
+    this.adjustAudioDiv.style.display = 'none';
     this.trainDiv.style.display = 'block';
     //set up timer
     this.startTimer();
@@ -404,9 +447,7 @@ class ProdTrain {
   }
 
   finish() {
-    //upload data
-    console.log('finished');
-    //this.manager.next();
+    this.manager.next();
   }
 
   static getDisplay(t) {
