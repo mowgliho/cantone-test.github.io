@@ -43,6 +43,8 @@ class ProdTrain {
 
     this.buildIntroDiv(doc, div);
     this.buildTrainDiv(doc, div, audio);
+
+    this.data = {round: [], click: [], contour: []};
   }
 
   buildIntroDiv(doc, div) {
@@ -72,6 +74,8 @@ class ProdTrain {
 
     let startButton = doc.create('button', 'Start Training!', this.introDiv);
     startButton.onclick = function() {that.startTraining()};
+
+    doc.create('hr', null, this.introDiv);
 
     let screenshotDiv = doc.create('div',null,this.introDiv);
     doc.create('h4', 'Example Screenshot:', screenshotDiv);
@@ -105,6 +109,9 @@ class ProdTrain {
     this.resetPb = trainPb['reset'];
     this.offPb = trainPb['off'];
     this.onPb = trainPb['on'];
+    for(const key of ['record','playback']) {
+      trainPb[key].addEventListener('click',function() {that.addClick(key)});
+    }
     this.trainUI = doc.create('div',null,trainDiv);
     let buttonBar = this.getButtonBar(doc, [this.exButton, trainPb['record'], trainPb['playback']]);
     trainDiv.appendChild(buttonBar);
@@ -161,7 +168,7 @@ class ProdTrain {
     //next button
     doc.create('hr',null,trainDiv);
     let nextButton = doc.create('button', 'Next Round', trainDiv);
-    nextButton.onclick = function() {that.nextRound();};
+    nextButton.onclick = function() {that.addClick('next'); that.nextRound();};
     this.stateDependentButtons.push(nextButton);
 
     this.trainDiv = trainDiv;
@@ -169,6 +176,10 @@ class ProdTrain {
 
   vocoderActive() {
     console.log('vocoder active');
+  }
+
+  addClick(type) {
+    this.data['click'].push({round: this.round, button: type, time: (new Date()).getTime() - this.startTime});
   }
 
   getButtonBar(doc, buttons) {
@@ -187,7 +198,7 @@ class ProdTrain {
 
     let button = doc.create('button','Play Exemplar',null);
     this.stateDependentButtons.push(button);
-    button.onclick = function() {that.playExemplar()};
+    button.onclick = function() {that.addClick('exemplar'); that.playExemplar()};
     return button;
   }
 
@@ -197,11 +208,17 @@ class ProdTrain {
     let button = doc.create('button','Adjusted to your range',null); 
     this.stateDependentButtons.push(button);
     button.onclick = function() {
+      that.addClick('adjusted');
       that.changeState('busy');
       let [node,audioContext] = that.getVocoded('char'); 
       node.onended = function() {that.changeState('ready')};
       node.start();};
     return button;
+  }
+
+  saveContour(contour, type, target, needsConversion) {
+    if(needsConversion) contour = ToneContours.freqArrayToSemitone(contour,0).map((a) => a.toFixed(2));
+    this.data['contour'].push({round: this.round, type: type, attempt: this.numAttempts, contour: contour, target: target});
   }
 
   buildPlayback(doc) {
@@ -214,16 +231,19 @@ class ProdTrain {
       that.changeState('busy');
     }: function() {that.changeState('busy')};
 
-    const recordedCallback = this.audioType == 'vocoded'? function(buffer) {
-      const start = (new Date()).getTime();
+    const recordedCallback = function(buffer) {
+      that.numAttempts += 1;
       const sampleRate = buffer.sampleRate;
       const array = combineChannels(buffer);
       that.changeState('ready');
-      for(var tuner of Object.values(that.tuners)) tuner.reactivate();
-      let contour = that.vocoder.getF0Contour(array, sampleRate,that.worldParam).f0;
+      let contour = that.audioType == 'vocoded'? that.vocoder.getF0Contour(array, sampleRate,that.worldParam).f0:cleanFrequencies(getFreq(buffer, 20));
       contour = cleanFrequencies(contour);
-      if(contour.length > 0) that.plotAttemptContour(contour);
-    }: function() { that.changeState('ready');};
+      if(that.audioType == 'vocoded') for(var tuner of Object.values(that.tuners)) tuner.reactivate();
+      if(contour.length > 0) {
+        that.saveContour(contour, 'attempt', null, true);
+        if(that.audioType == 'vocoded') that.plotAttemptContour(contour);
+      }
+    };
 
     const playbackCallback = function() {that.changeState('ready')};
 
@@ -264,9 +284,10 @@ class ProdTrain {
   tuneVocoded(type) {
     const that = this;
 
+    this.addClick('tune_vocoded_' + type);
+    this.tunerLogged = true;
     getAudioStream(function(a, stream) {
       let tuner = that.tuners[type];
-      that.tunerStarted(tuner);
       let [node, audioContext] = that.getVocoded(type);
       tuner.guideNode(node, node, audioContext, stream, false)
     })();
@@ -326,6 +347,9 @@ class ProdTrain {
     
     this.resetPb();
     this.changeState('ready');
+    this.startTime = (new Date()).getTime();
+    this.clicks = [];
+    this.numAttempts = 0;
   }
 
   plotAttemptContour(contour) {
@@ -358,19 +382,25 @@ class ProdTrain {
 
   tunerStarted(t) {
     this.changeState('busy');
-    for(var tuner of Object.values(this.tuners)) {
+    for(const [key,tuner] of Object.entries(this.tuners)) {
+      if(tuner == t && !this.tunerLogged) this.addClick('tune_pure_' + key);
       if(tuner != t) tuner.deactivate();
     }
+    this.tunerLogged = false;//SUPER HACKY: fix later
   }
 
   tunerFinished(t, mean, z, contour) {
     this.changeState('ready');
-    for(var tuner of Object.values(this.tuners)) {
+    let c = cleanMode(contour.map((a) => a[1]));
+    for(const [key, tuner] of Object.entries(this.tuners)) {
+      if(tuner == t && contour.length > 0) this.saveContour(c, 'tune_' + key, contour[0][2], false);
       tuner.reactivate();
     }
   }
 
   nextRound() {
+    let stim = this.stimuli[this.stimIdx];
+    this.data['round'].push({round: this.round, syl: stim['syl'], tone: stim['tone'], time: (new Date()).getTime() - this.startTime });
     this.round += 1;
     this.stimIdx = this.round % this.stimuli.length;
     this.startRound();
@@ -442,6 +472,8 @@ class ProdTrain {
   }
 
   finish() {
+    let id = this.share.get('id');
+    uploadFiles(Object.keys(this.data), this.data, id, 'prod_train');
     this.manager.next();
   }
 

@@ -274,11 +274,15 @@ getVolButtons = function(doc, share, div) {
 cleanFrequencies = function(freqs) {
   freqs = freqs .filter(a => (a > 50 && a < 750));
   if(freqs.length > 0) {
-    let hashmap = freqs.reduce( (acc, val) => {acc[val] = (acc[val] || 0 ) + 1; return acc },{});
-    let mode =  Object.keys(hashmap).reduce((a, b) => hashmap[a] > hashmap[b] ? a : b);
-    freqs = freqs.filter(a => a != mode);
+    freqs = cleanMode(freqs);
   }
   return freqs;
+}
+
+cleanMode = function(x) {
+  let hashmap = x.reduce( (acc, val) => {acc[val] = (acc[val] || 0 ) + 1; return acc },{});
+  let mode =  Object.keys(hashmap).reduce((a, b) => hashmap[a] > hashmap[b] ? a : b);
+  return x.filter(a => a != mode);
 }
 
 // Convert an AudioBuffer to a Blob using WAVE representation
