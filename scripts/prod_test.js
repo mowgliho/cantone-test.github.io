@@ -2,12 +2,12 @@ class ProdTest {
   recordTime = 2;
   buttonBarWidth = 200;
   
-  //TODO vol buttons
   constructor(manager, doc, div, audio, share) {
     const that = this;
 
     this.manager = manager;
     this.share = share;
+    this.buttons = {};
 
     doc.create('h2','Production Test',div);
     doc.create('hr',null,div);
@@ -37,33 +37,55 @@ class ProdTest {
 
     let pb = definePlayback(doc, this.recordTime, null, 
       function() {that.busy()}, 
-      function() {that.recorded()},
+      function(buffer) {that.recorded(buffer)},
       function() {that.played()},
       function() {return that.share.get('micGain')});
     this.resetPb = pb['reset'];
 
     let buttonDiv = doc.create('div',null,this.testDiv);
     buttonDiv.style.width = this.buttonBarWidth + 'px';
-    for(const button of [pb['record'],pb['playback']]) {
+    for(const key of ['record','playback']) {
+      let button = pb[key];
+      this.buttons[key] = button;
       button.style.width = (100/2).toFixed(2) + '%';
       buttonDiv.appendChild(button)
     }
 
     let attemptVol = doc.create('p','Attempt playback volume: ',this.testDiv);
-    getVolButtons(doc, this.share, attemptVol)
+    getVolButtons(doc, this.share, attemptVol);
 
     doc.create('hr',null,this.testDiv);
     this.submitButton = doc.create('button','Submit',this.testDiv);
+    this.buttons['submit'] = this.submitButton;
+    this.recordButtons();//EWW: has to be before so that the order of event listeners is good.
     this.submitButton.onclick = function() { that.nextRound()};
+
+    this.data = {round: [], click: [], contour: []};
+    this.audio = {};
+  }
+
+  recordButtons() {
+    const that = this;
+    for(const [key, button] of Object.entries(this.buttons)) {
+      button.addEventListener('click', function() {that.data['click'].push({round: that.idx, button: key, time: (new Date()).getTime() - that.startTime})});
+    }
   }
 
   busy() {
     this.submitButton.disabled = true;
   }
 
-  recorded() {
+  recorded(buffer) {
+    const that = this;
+
+    let freqs = cleanFrequencies(getFreq(buffer, 20));
+    if(freqs.length > 0) {
+      this.data['contour'].push({round:this.idx,attempt: this.numAttempts, contour: ToneContours.freqArrayToSemitone(freqs, 0).map((a) => a.toFixed(2))});
+    }
     this.hasRecorded = true;
     this.update();
+    this.numAttempts += 1;
+    this.audio[this.idx] = buffer;
   }
 
   played() {
@@ -89,17 +111,32 @@ class ProdTest {
     this.sylLabel.innerHTML = syl['syl'];
     this.toneLabel.innerHTML = syl['tone'];
     this.descLabel.innerHTML = syl['desc'];
+
+    this.startTime = (new Date()).getTime();
+    this.numAttempts = 0;
   }
 
   nextRound() {
     //do gathering of data
+    let syl = this.stimuli[this.idx];
+    this.data['round'].push({round: this.idx, syl: syl['syl'], tone: syl['tone'], attempts: this.numAttempts, time: (new Date()).getTime() - this.startTime});
 
     this.idx += 1;
     if(this.idx < this.stimuli.length) {
       this.startRound();
     } else {
-      this.manager.next();
+      this.finish();
     }
+  }
+
+  finish() {
+    let id = this.share.get('id');
+    uploadFiles(Object.keys(this.data), this.data, id, 'prod_test');
+    for(const [round, buffer] of Object.entries(this.audio)) {
+      let blob = bufferToWave(buffer, buffer.length);
+      uploadAudioFile(blob, id + '_prod_test_' + round + '.wav');
+    }
+    this.manager.next();
   }
 
   start(){};

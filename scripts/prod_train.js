@@ -1,6 +1,4 @@
 class ProdTrain {
-  minF0 = 50;
-  maxF0 = 750;
   worldParam = 16;
   buttonBarWidth = 500;
   recordTime = 2;
@@ -22,7 +20,7 @@ class ProdTrain {
 
 
   timeLeft = 900*1000;//amount of time for the task.
-  stimuli = Stimuli.getProdTrainStimuli(1, 50);
+  stimuli = Stimuli.getProdTrainStimuli(1, 1);
 
   constructor(manager, doc, div, audio, share) {
     this.audio = audio;
@@ -223,7 +221,7 @@ class ProdTrain {
       that.changeState('ready');
       for(var tuner of Object.values(that.tuners)) tuner.reactivate();
       let contour = that.vocoder.getF0Contour(array, sampleRate,that.worldParam).f0;
-      contour = contour.filter(f => (f > that.minF0 && f < that.maxF0));
+      contour = cleanFrequencies(contour);
       if(contour.length > 0) that.plotAttemptContour(contour);
     }: function() { that.changeState('ready');};
 
