@@ -74,6 +74,8 @@ class Questionnaire {
   }
 
   finish(data) {
+    const that = this;
+
     const id = this.share.get('id');
     let filename = 'questionnaire.txt';
  
@@ -81,9 +83,8 @@ class Questionnaire {
     for(const [q,a] of Object.entries(data)) {
       text += q + '\n' + a() + '\n\n';
     }
-    uploadPlainTextFile(id, filename, text, false)
-    uploadProgress(id, 'questionnaire','completed');
-    this.manager.next();
+    uploadPlainTextFile(id, filename, text, false, null)
+    uploadProgress(id, 'questionnaire','completed', function() {that.manager.next();});
   }
 
   start() {

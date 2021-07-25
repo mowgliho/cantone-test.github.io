@@ -57,8 +57,7 @@ class Consent {
         for(x of ['id','visual','audio']) {
           that.share.save(x,params[x]);
         }
-        uploadProgress(that.share.get('id'), 'consent','completed');
-        that.manager.next();
+        uploadProgress(that.share.get('id'), 'consent','completed', function() { that.manager.next();});
       })}).catch(
       (error) => {console.log("error", error)});
   }

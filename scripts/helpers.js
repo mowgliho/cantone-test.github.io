@@ -340,14 +340,14 @@ function bufferToWave(abuffer, len) {
   }
 }
 
-uploadPlainTextFile = function(id, filename, text, append) {
+uploadPlainTextFile = function(id, filename, text, append, callback) {
   let fd = new FormData();
   fd.append('id', id);
   fd.append('filename', filename);
   fd.append('text', text);
   fd.append('append', append);
   fetch(Config.plainTextCgi, { method: 'POST', body: fd}).then(
-    (response) => {response.text().then(function(x) {console.log(x)})}).catch(
+    (response) => {response.text().then(function(x) {if(callback != null) callback();})}).catch(
     (error) => {console.log("error", error)});
 }
 
@@ -360,17 +360,25 @@ uploadAudioFile = function(blob, filename) {
     (error) => {console.log("error", error)});
 }
 
-uploadProgress = function(id, task, status) {
-  uploadPlainTextFile(id, 'progress.txt', task + '\t' + status + '\n', true);
+uploadProgress = function(id, task, status, callback) {
+  uploadPlainTextFile(id, 'progress.txt', task + '\t' + status + '\n', true, callback);
 }
 
 getStatus = function(id, callback) {
+  getCgiInner(id, callback, Config.statusCgi);
+}
+
+getCgiInner = function(id, callback, url) {
   let fd = new FormData();
   fd.append('id',id);
 
-  fetch(Config.statusCgi, { method: 'POST', body: fd}).then(
+  fetch(url, { method: 'POST', body: fd}).then(
     (response) => {response.text().then(function(x) {
       callback(JSON.parse(x));
     })}).catch(
     (error) => {console.log("error", error)});
+}
+
+getInfo = function(id, callback) {
+  getCgiInner(id, callback, Config.infoCgi);
 }

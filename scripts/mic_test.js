@@ -16,7 +16,7 @@ class MicTest {
     'Peep under the tent and see the clowns.',
     'The leaf drifts along with a slow spin.'
   ]
-  constructor(manager, doc, div, audio, share) {
+  constructor(manager, doc, div, audio, share, status) {
     const that = this;
 
     this.manager = manager;
@@ -24,7 +24,7 @@ class MicTest {
 
     //intro
     doc.create('h2','Calibration and Mic Test',div);
-    doc.create('label','Now, we will check that your microphone works, that there isn\'t too much background noise, and calibrate to your vocal range.', div);
+    doc.create('label','Let\'s check that your microphone works, that there isn\'t too much background noise, and calibrate to your vocal range.', div);
     doc.create('hr',null,div);
 
     //ambient
@@ -210,6 +210,7 @@ class MicTest {
       body += 'New Contour:\n';
     }
     
+    //append to info file?
     fetch(Config.plainTextCgi, { method: 'POST', body: body}).then(
       (response) => {response.text().then(function(x) {console.log(x)})}).catch(
       (error) => {console.log("error", error)});

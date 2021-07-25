@@ -43,8 +43,7 @@ class Intro {
     //next
     this.nextButton = doc.create('button','Move on to next step!', div);
     this.nextButton.onclick = function() {
-      uploadProgress(that.share.get('id'), 'intro','completed');
-      manager.next();
+      uploadProgress(that.share.get('id'), 'intro','completed', function() { manager.next()});
     };
   }
 

@@ -65,6 +65,8 @@ class PcptCanto {
   }
 
   next() {
+    const that = this;
+
     const answers = this.match.getGuesses();
     const id = this.share.get('id');
     const filename = 'pcpt_canto.tsv';
@@ -72,20 +74,15 @@ class PcptCanto {
     for(var i = 0; i < answers.length; i++) {
       text += [this.round,answers[i]['start'], answers[i]['end']].join('\t') + '\n';
     }
-    uploadPlainTextFile(id, filename, text, this.round == 0? false: true)
-    uploadProgress(id, 'pcpt_canto',this.round);
-
-    this.round += 1;
-    if(this.round < this.trials.length) {
-      this.initiateTrial();
-    } else {
-      this.end();
-    }
-  }
-
-  end() {
-    uploadProgress(this.share.get('id'), 'pcpt_canto','completed');
-    this.manager.next();
+    uploadPlainTextFile(id, filename, text, this.round == 0? false: true, null)
+    uploadProgress(id, 'pcpt_canto',this.round, function() {
+      that.round += 1;
+      if(that.round < that.trials.length) {
+        that.initiateTrial();
+      } else {
+        uploadProgress(that.share.get('id'), 'pcpt_canto','completed', function() { that.manager.next();});
+      }
+    });
   }
 
   start() {}
