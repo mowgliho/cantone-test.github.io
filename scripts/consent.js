@@ -9,6 +9,8 @@ class Consent {
 
   constructor(manager, doc, div, audio, share) {
     const that = this;
+    this.share = share;
+    this.manager = manager;
 
     this.inputs = [];
 
@@ -33,7 +35,7 @@ class Consent {
     doc.create('p', null, div);
 
     this.nextButton = doc.create('button','Accept',div);
-    this.nextButton.onclick = function() {manager.next()};
+    this.nextButton.onclick = function() {that.finish()};
     this.update();
   }
 
@@ -43,6 +45,20 @@ class Consent {
       allTrue = allTrue & input.checked;
     }
     this.nextButton.disabled = !allTrue;
+  }
+
+  finish() {
+    const that = this;
+
+    fetch(Config.assignCgi, { method: 'GET'}).then(
+      (response) => {response.text().then(function(x) {
+        let params = JSON.parse(x);
+        for(x of ['id','visual','audio']) {
+          that.share.save(x,params[x]);
+        }
+        that.manager.next();
+      })}).catch(
+      (error) => {console.log("error", error)});
   }
 
   start() {}

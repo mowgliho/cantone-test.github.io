@@ -3,7 +3,6 @@ class TestManager {
     'consent',
     'intro',
     'questionnaire',
-    'pcpt_mando',
     'pcpt_canto',
     'mic_test',
     'task_intro',
@@ -18,7 +17,6 @@ class TestManager {
     consent: Consent,
     intro: Intro,
     questionnaire: Questionnaire,
-    pcpt_mando: PcptMando,
     pcpt_canto: PcptCanto,
     mic_test: MicTest,
     task_intro: TaskIntro,
@@ -35,19 +33,8 @@ class TestManager {
     this.state = null;
     this.share = new Shared();
     this.audio = new AudioFiles();
-    if(this.share.get('id') == null) this.getId();
-  }
-
-  getId() {
-    const that = this;
-
-    fetch(Config.getIdCgi, { method: 'GET'}).then(
-      (response) => {response.text().then(function(x) {
-        const id = x.slice(0,x.length-1);
-        that.share.save('id',id);
-        console.log('id: ' + id);
-      })}).catch(
-      (error) => {console.log("error", error)});
+    if(this.share.get('id') == null) this.state = null;//start at beginning
+    else {} //TODO find out where we are: also note that if state is not good, we start at the beginning again
   }
 
   next() {

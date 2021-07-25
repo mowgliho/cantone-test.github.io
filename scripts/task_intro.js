@@ -102,6 +102,7 @@ class TaskIntro {
     }
   }
 
+  //TODO change
   register(share, doc, div, audio) {
     const that = this;
 
