@@ -2,6 +2,7 @@ class Questionnaire {
   questions = [
     {text: 'What is/are your native language(s)?', type: 'text', validate: true},
     {text: 'If you speak any other languages, what are they? Please indicate your proficiency.', type: 'text', validate: false},
+    {text: 'Do you have playing musical instruments, singing, or the like? Again, please indicate your proficiency.', type: 'text', validate: false},
     {text: 'How old are you?', type: 'radio', id: 'age', options: ['18-29','30-39','40-49','50-59','60-69','70+'], validate: true}
   ]
 
