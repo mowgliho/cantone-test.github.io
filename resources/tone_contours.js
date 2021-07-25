@@ -30,13 +30,14 @@ class ToneContours {
     return contourPts;
   }
 
+  //range for humanum data is 29-45, i.e. 16 semitones. However, in the model, we normalized by sd, so we divided by 5.2st, making the range 3.08 sds. The range for the idealized is 4 sds. So to equalize we scale by 4/3.08
   static getCubicContour(tone, pts, sd) {
     let max = ToneContours.dataCubics[tone]['max'];
     let coefs = ToneContours.dataCubics[tone]['coefs'];
     let contourPts = [];
     for(var i = 0; i <= pts; i++) {
       let t = max*(i/pts);
-      contourPts.push([t, (4/2.6)*sd*(coefs[0] + coefs[1]*t + coefs[2]*(t**2) + coefs[3]*(t**3))])//4/2.6 to scale with idealized
+      contourPts.push([t, (4/3.08)*sd*(coefs[0] + coefs[1]*t + coefs[2]*(t**2) + coefs[3]*(t**3))])
     }
     return contourPts;
   }
@@ -118,7 +119,6 @@ class ToneContours {
 
   //from looking at humanum data
   static humanumMean = 38.1//in semitones
-  static humanumSt = 3.5;
   static canvasHeightSd = 6;
 
   static humanumTuneSts = {

@@ -340,8 +340,8 @@ class ProdTrain {
     if(this.audioType == 'vocoded') {
       for(const [type,tuner] of Object.entries(this.tuners)) {
         const st = ToneContours.getTuningHumanumSt(this.mean, stim['tone'], type);
-        const z = (st - this.mean)/ToneContours.humanumSt;
-        tuner.set(this.mean, z, ToneContours.humanumSt);
+        const z = (st - this.mean)/Config.stSd;
+        tuner.set(this.mean, z, Config.stSd);
       }
     }
     
@@ -353,7 +353,7 @@ class ProdTrain {
   }
 
   plotAttemptContour(contour) {
-    let stContour = ToneContours.freqArrayToSemitone(contour, -this.mean).map((a) => a/ToneContours.humanumSt);;
+    let stContour = ToneContours.freqArrayToSemitone(contour, -this.mean).map((a) => a/Config.stSd);;
     const smoother = getSmoother(this.smoothLength, this.smoothThreshold);
     var smoothed = [];
     for(const x of stContour) smoothed.push(smoother(x));
