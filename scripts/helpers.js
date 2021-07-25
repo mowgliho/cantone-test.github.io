@@ -361,16 +361,7 @@ uploadAudioFile = function(blob, filename) {
 }
 
 uploadProgress = function(id, task, status) {
-  let fd = new FormData();
-  fd.append('id',id);
-  fd.append('task',task);
-  fd.append('status',status);
-
-  fetch(Config.progressCgi, { method: 'POST', body: fd}).then(
-    (response) => {response.text().then(function(x) {
-      console.log(x);
-    })}).catch(
-    (error) => {console.log("error", error)});
+  uploadPlainTextFile(id, 'progress.txt', task + '\t' + status + '\n', true);
 }
 
 getStatus = function(id, callback) {
