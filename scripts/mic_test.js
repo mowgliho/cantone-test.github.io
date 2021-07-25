@@ -29,14 +29,14 @@ class MicTest {
 
     //ambient
     this.ambientDiv = doc.create('div',null,div);
-    doc.create('label','First, let\'s check for ambient noise. Click the button and wait for ' + this.ambientTime + ' seconds. ',this.ambientDiv);
+    doc.create('label','Let\'s check for ambient noise. Click the button and wait for ' + this.ambientTime + ' seconds. ',this.ambientDiv);
     let ambientButton = doc.create('button','Start',this.ambientDiv);
     this.ambientLabel = doc.create('label', null, this.ambientDiv);
     ambientButton.onclick = getAudioStream(function(audioContext, stream) {that.ambientNoise(audioContext,stream, ambientButton)});
 
     //calibration
     this.calibDiv = doc.create('div',null,div);
-    doc.create('label','Now, let\'s calibrate to your vocal range. Press "Record" and speak the words in the text box below. When finished speaking, click "Done" (the button will change). You may recalibrate if you mess up. Then click "Continue"',this.calibDiv);
+    doc.create('label','Let\'s calibrate to your vocal range. Press "Record" and say the words below. Then click "Done" (the "Record" button will change). You may recalibrate if you mess up. Finally, click "Continue"',this.calibDiv);
     let textArea = doc.create('textarea',this.calibrationSentences.join('\n'),this.calibDiv);
     textArea.rows = this.calibrationSentences.length;
     textArea.cols = this.calibrationSentences.reduce((a,x) => Math.max(a,x.length),0);
@@ -52,10 +52,16 @@ class MicTest {
     
     //vocal check
     this.vocalDiv = doc.create('div',null,div);
-    doc.create('label', 'Let\'s check the calibration by trying to match pitches. Below are 5 pitches represented by horizontal lines. When you click the button below, you will hear a tone. This tone will last for ' + this.checkTuneTime + ' seconds. As soon as the tone ends, try to match (hum or sing) the tone. A line will appear with your pitch - try to get this pitch to match the horizontal line. When you have matched the tone for ' + this.checkMatchTime + ' seconds, recording will stop automatically. Match all 5 to go on. If you find that pitches are out of your range, you may click the buttons to shift all of the pitches up or down. Note that when you do this you will have to do all 5 again with the new pitches.',this.vocalDiv);
+    doc.create('p', 'Let\'s check the calibration by trying to match pitches. Below are 5 pitches represented by black lines. On clicking "Start", you will hear a tone, which will last for ' + this.checkTuneTime + ' seconds. When the tone ends, match (hum or sing) the tone. A line should appear with your pitch - match the black line. When you have approximately matched for ' + this.checkMatchTime + ' seconds, recording will stop.', this.vocalDiv);
+    doc.create('p', 'Match all 5 to go on. If the pitches are too high or too low, you may click the "Shift pitches up/down" buttons. Note that when you do this you will have to do all 5 again with the new pitches.',this.vocalDiv);
+    doc.create('p','Then click "Next".', this.vocalDiv);
     doc.create('hr',null,this.vocalDiv);
     const upButton = doc.create('button', 'Shift pitches up',this.vocalDiv);
     upButton.onclick = function() { that.startTuning(that.meanSt+1) };
+    let span = doc.create('span',null,this.vocalDiv);
+    span.style.width = '10px';
+    span.style.display = 'inline-block';
+    doc.create('label','  ',this.vocalDiv);
     const downButton = doc.create('button', 'Shift pitches Down',this.vocalDiv);
     downButton.onclick = function() { that.startTuning(that.meanSt-1) };
     doc.create('hr',null,this.vocalDiv);
@@ -71,6 +77,8 @@ class MicTest {
       }
       this.tuners.push(tuner);
     }
+
+    doc.create('hr',null,this.vocalDiv);
     this.vocalNextButton = doc.create('button','Next',this.vocalDiv);
     this.vocalDiv.style.display = 'none';
 
@@ -100,8 +108,6 @@ class MicTest {
     let dbfs = 20*Math.log10(Math.sqrt(vols.reduce((a,b) => a + b**2,0)/vols.length));
     dbfs = Math.max(dbfs, this.minDbfs);
     if(dbfs < this.maxDbfs) {
-      this.ambientLabel.style.color = 'green';
-      this.ambientLabel.innerHTML = ' Thanks!';
       this.share.save('ambientDbfs',dbfs);
       this.ambientDiv.style.display = 'none';
       this.calibDiv.style.display = 'block';
@@ -199,23 +205,29 @@ class MicTest {
   }
 
   next() {
-    const id = this.share.get('id');
-    var body = id + '_mic_test.tsv\n';
-    for(var contour of this.attemptContours) {
-      body += [contour['id'],contour['mean'].toFixed(3),contour['z'].toFixed(3)].join('\t') + '\n';
-      body += 'time\tst\ttarget\n';
-      for(var row of contour['contour']) {
-        body += row.join('\t') + '\n';
-      }
-      body += 'New Contour:\n';
-    }
-    
-    //append to info file?
-    fetch(Config.plainTextCgi, { method: 'POST', body: body}).then(
-      (response) => {response.text().then(function(x) {console.log(x)})}).catch(
-      (error) => {console.log("error", error)});
+    const that = this;
 
-    this.manager.next();
+    const id = this.share.get('id');
+    const filename = 'mic_test.tsv';
+    var text = '';
+    for(var contour of this.attemptContours) {
+      text += 'New Contour:\n';
+      text += [contour['id'],contour['mean'].toFixed(3),contour['z'].toFixed(3)].join('\t') + '\n';
+      text += 'time\tst\ttarget\n';
+      for(var row of contour['contour']) {
+        text += row.join('\t') + '\n';
+      }
+      text += '\n';
+    }
+
+    uploadPlainTextFile(id, filename, text, false, function() {
+      const filename = 'info.txt';
+      var text = '';
+      for(const x of ['ambientDbfs','st']) text += x + '\t' + that.share.get(x) + '\n';
+      uploadPlainTextFile(id, filename, text, true, function() {
+        uploadProgress(id, 'mic_test','completed', function() {that.manager.next();});
+      });
+    });
   }
 
   start() {}

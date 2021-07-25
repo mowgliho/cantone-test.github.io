@@ -57,22 +57,24 @@ class TestManager {
                 that.startBlank();
                 return;
               }
+              that.share.save(x,data[x]);
             }
             let ind = that.flow.indexOf(status['task']);
             if(ind == -1) {//if bad data, start over
               that.startBlank();
               return;
             }
-            if(ind > that.flow.indexOf('mic_test')) {//if task more than mic_test, but mic params not set, start from mic test
+            if(ind >= that.flow.indexOf('mic_test')) {//if task more than mic_test, but mic params not set, start from mic test
               for(const x of ['ambientDbfs','st']) {
                 if(!Object.keys(data).includes(x)) {
-                  that.state = that.flow.indexof('mic_test');
+                  that.state = 'mic_test';
                   that.status = null;
                   that.startTask();
                   return;
                 }
+                that.share.save(x,data[x]);
               }
-            }//TODO check by not saving to db.
+            }
             //now, safe to start from the task that we got from the server
             if(status['status'] == 'completed') {
               that.startNextTask(status['task']);
