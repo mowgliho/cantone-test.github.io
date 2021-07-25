@@ -81,7 +81,7 @@ class Questionnaire {
     for(const [q,a] of Object.entries(data)) {
       text += q + '\n' + a() + '\n\n';
     }
-    uploadPlainTextFile(id, filename, text)
+    uploadPlainTextFile(id, filename, text, false)
     uploadProgress(id, 'questionnaire','completed');
     this.manager.next();
   }

@@ -340,11 +340,12 @@ function bufferToWave(abuffer, len) {
   }
 }
 
-uploadPlainTextFile = function(id, filename, text) {
+uploadPlainTextFile = function(id, filename, text, append) {
   let fd = new FormData();
   fd.append('id', id);
   fd.append('filename', filename);
   fd.append('text', text);
+  fd.append('append', append);
   fetch(Config.plainTextCgi, { method: 'POST', body: fd}).then(
     (response) => {response.text().then(function(x) {console.log(x)})}).catch(
     (error) => {console.log("error", error)});

@@ -7,9 +7,9 @@ import cgitb
 try: 
   cgitb.enable()
   form = cgi.FieldStorage()
-  info = {x: form[x].value for x in ['id','filename','text']}
+  info = {x: form[x].value for x in ['id','filename','text', 'append']}
 
-  with open(os.path.join('data',info['id'],info['filename']),'w') as f:
+  with open(os.path.join('data',info['id'],info['filename']),'a' if info['append'] == 'true' else 'w') as f:
     f.write(info['text'])
 
   print("Content-type: text/plain\n")
