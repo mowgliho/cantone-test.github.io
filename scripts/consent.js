@@ -7,7 +7,7 @@ class Consent {
     'I agree that recordings of my voice/face may be made publicly available for general use (e.g. used in radio or television broadcasts, or put on the world-wide web).'
   ];
 
-  constructor(manager, doc, div, audio, share) {
+  constructor(manager, doc, div, audio, share, status) {
     const that = this;
     this.share = share;
     this.manager = manager;
@@ -56,6 +56,7 @@ class Consent {
         for(x of ['id','visual','audio']) {
           that.share.save(x,params[x]);
         }
+        uploadProgress(that.share.get('id'), 'consent','completed');
         that.manager.next();
       })}).catch(
       (error) => {console.log("error", error)});

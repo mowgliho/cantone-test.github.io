@@ -347,3 +347,27 @@ uploadAudioFile = function(blob, filename) {
     (response) => {console.log(response)}).catch(
     (error) => {console.log("error", error)});
 }
+
+uploadProgress = function(id, task, status) {
+  let fd = new FormData();
+  fd.append('id',id);
+  fd.append('task',task);
+  fd.append('status',status);
+
+  fetch(Config.progressCgi, { method: 'POST', body: fd}).then(
+    (response) => {response.text().then(function(x) {
+      console.log(x);
+    })}).catch(
+    (error) => {console.log("error", error)});
+}
+
+getStatus = function(id, callback) {
+  let fd = new FormData();
+  fd.append('id',id);
+
+  fetch(Config.statusCgi, { method: 'POST', body: fd}).then(
+    (response) => {response.text().then(function(x) {
+      callback(JSON.parse(x));
+    })}).catch(
+    (error) => {console.log("error", error)});
+}

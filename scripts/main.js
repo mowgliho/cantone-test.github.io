@@ -33,31 +33,61 @@ class TestManager {
     this.state = null;
     this.share = new Shared();
     this.audio = new AudioFiles();
-    if(this.share.get('id') == null) this.state = null;//start at beginning
-    else {} //TODO find out where we are: also note that if state is not good, we start at the beginning again
+    this.initialize();
+  }
+
+  initialize() {
+    if(this.share.get('id') == null) {
+      this.startBlank();
+    } else {
+      const that = this;
+
+      getStatus(this.share.get('id'), function(x) { 
+        if(x['task'] == null) {
+          that.startBlank();
+        } else {
+          let ind = that.flow.indexOf(x['task']);
+          if(ind == -1) that.startBlank();
+          else {
+            if(x['status'] == 'completed') {
+              that.startNextTask(x['task']);
+            } else {
+              that.state = x['task'];
+              that.status = x['status'];
+              that.startTask();
+            }
+          }
+        }
+      });
+    }
+  }
+
+  startNextTask(task) {
+    let ind = this.flow.indexOf(task);
+    if(ind < this.flow.length - 1) {
+      this.state = this.flow[ind+1];
+      this.status = null;
+      this.startTask();
+    } else {
+      //TODO: done/end div
+    }
+  }
+
+  startBlank() {
+    this.state = 'consent';
+    this.status = null;
+    this.startTask();
   }
 
   next() {
-    let next = false;
-    if(this.state == null) {
-      next = true;
-      this.state = this.flow[0];
-    } else {
-      next = false;
-      for(const state of this.flow) {
-        if(next) {
-          this.state = state;
-          break;
-        }
-        if(state == this.state) next = true;
-      }
-    }
-    if(next) {
-      this.div.innerHTML = '';
-      if(this.classes[this.state] == null) return;
-      let cl = new this.classes[this.state](this, this.doc, this.div, this.audio, this.share);
-      cl.start();
-    }
+    this.startNextTask(this.state);
+  }
+
+  startTask() {
+    this.div.innerHTML = '';
+    if(this.classes[this.state] == null) return;
+    let cl = new this.classes[this.state](this, this.doc, this.div, this.audio, this.share, this.status);
+    cl.start();
   }
 }
 
@@ -67,5 +97,4 @@ window.onload = function() {
   let div = document.getElementById('main');
   let doc = new DocumentWrapper(document);
   let testManager = new TestManager(doc, div);
-  testManager.next();
 }

@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import pathlib
 import os
-import sys
 import uuid
 import itertools
 import json

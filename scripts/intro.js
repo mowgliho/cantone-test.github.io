@@ -6,7 +6,7 @@ class Intro {
   minFreq = 50;
   maxFreq = 500;
 
-  constructor(manager, doc, div, audio, share) {
+  constructor(manager, doc, div, audio, share, status) {
     const that = this;
     this.share = share;
 
