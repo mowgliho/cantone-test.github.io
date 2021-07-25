@@ -340,6 +340,17 @@ function bufferToWave(abuffer, len) {
   }
 }
 
+uploadPlainTextFile = function(id, filename, text) {
+  let fd = new FormData();
+  fd.append('id', id);
+  fd.append('filename', filename);
+  fd.append('text', text);
+  fetch(Config.plainTextCgi, { method: 'POST', body: fd}).then(
+    (response) => {response.text().then(function(x) {console.log(x)})}).catch(
+    (error) => {console.log("error", error)});
+}
+
+
 uploadAudioFile = function(blob, filename) {
   var fd = new FormData();
   fd.append('audio_data',blob,filename);
