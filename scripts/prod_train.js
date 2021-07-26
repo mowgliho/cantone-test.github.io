@@ -38,6 +38,8 @@ class ProdTrain {
 
     this.vocoder = new WorldVocoder(this, this.tuneTime, this.mean);
 
+    this.timeLeft = 900*1000;//amount of time for the task.
+
     this.buildIntroDiv(doc, div);
     this.buildTrainDiv(doc, div, audio);
 
@@ -46,7 +48,6 @@ class ProdTrain {
 
     this.startOnVocoder = false;
     this.round = null;
-    this.timeLeft = 900*1000;//amount of time for the task.
 
     if(status != null) {
       let tokens = status.split(' ');
