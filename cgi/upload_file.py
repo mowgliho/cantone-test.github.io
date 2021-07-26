@@ -3,17 +3,20 @@ import sys
 import os
 import cgi
 import cgitb
+import json
 
 try: 
   cgitb.enable()
   form = cgi.FieldStorage()
-  info = {x: form[x].value for x in ['id','filename','text', 'append']}
+  pid = form['id'].value
+  data = json.loads(form['data'].value)
 
-  with open(os.path.join('data',info['id'],info['filename']),'a' if info['append'] == 'true' else 'w') as f:
-    f.write(info['text'])
+  for d in data:
+    with open(os.path.join('data',pid,d['filename']),'a' if d['append'] else 'w') as f:
+      f.write(d['text'])
 
   print("Content-type: text/plain\n")
-  print('wrote: %s %s' % (info['id'], info['filename']))
+  print('wrote: %s %s' % (info['id'], [d['filename'] for d in data]))
 except Exception as e:
   print("Content-type: text/plain\n")
   print(str(e))

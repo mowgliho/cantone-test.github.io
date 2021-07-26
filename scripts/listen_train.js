@@ -142,7 +142,7 @@ class ListenTrain {
       data[key] = val;
     }
     data['trial'] = [this.trialData];
-    uploadFiles(Object.keys(data), data, id, 'listen_train', this.trialId != 0, function() {
+    uploadFiles(data, id, 'listen_train', this.trialId != 0, function() {
       uploadProgress(id, 'listen_train',that.trialId, function() {
         that.trialId += 1;
         that.trialIdx = that.getTrialIdx(that.trialId);

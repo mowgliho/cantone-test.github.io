@@ -107,27 +107,18 @@ function  interpolateColor(start, end, j, n) {
   return 'rgba(' + arr.join(',') + ')';
 }
 
-function uploadFiles(keys, d, id, name, append, callback) {
-  if(keys.length == 0) {
-    callback();
-    return;
-  }
-  const key = keys.pop();
-  if(d[key].length > 0) {
-    let data = d[key];
+function uploadFiles(d, id, name, append, callback) {
+  let fileData = [];
+  for(const [key,data] of Object.entries(d)) {
     let cols = Object.keys(data[0]);
-
-    var text = append?'': cols.join('\t') + '\n';
     var filename = name + '_' + key + '.tsv';
+    var text = append?'': cols.join('\t') + '\n';
     for(var row of data) {
       text += cols.map((a) => row[a]).join('\t') + '\n'
     }
-    uploadPlainTextFile(id, filename, text, append, function() {
-      uploadFiles(keys, d, id, name, append, callback);
-    });
-  } else {
-    uploadFiles(keys, d, id, name, append, callback);
+    fileData.push({filename: filename, text: text, append: append});
   }
+  uploadPlainTextFiles(id, fileData, callback);
 }
 
 //returns a record and a playback button that are linked appropriately
@@ -344,15 +335,19 @@ function bufferToWave(abuffer, len) {
   }
 }
 
-uploadPlainTextFile = function(id, filename, text, append, callback) {
+//data is list of files, each of which is a dict [{filename: asdf, text: asdf, append: asdf},{filename: asdf, text: asdf}]
+uploadPlainTextFiles = function(id, data, callback) {
   let fd = new FormData();
   fd.append('id', id);
-  fd.append('filename', filename);
-  fd.append('text', text);
-  fd.append('append', append);
+  fd.append('data',JSON.stringify(data));
+
   fetch(Config.plainTextCgi, { method: 'POST', body: fd}).then(
     (response) => {response.text().then(function(x) {if(callback != null) callback();})}).catch(
     (error) => {console.log("error", error)});
+}
+
+uploadPlainTextFile = function(id, filename, text, append, callback) {
+  uploadPlainTextFiles(id, [{filename: filename, text: text, append: append}], callback);
 }
 
 
