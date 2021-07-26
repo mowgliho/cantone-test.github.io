@@ -18,7 +18,8 @@ class ListenTrain {
   paramText = {
     ref: 'Can compare to reference audio: ',
     same: 'Input audio the same (except for tones): ',
-    injective: 'One-to-one matching (i.e. can deduce by elimination): '
+    injective: 'One-to-one matching (i.e. can deduce by elimination): ',
+    visual: 'Can look at tone chart: '
   }
 
   paramSettings = {
@@ -43,6 +44,7 @@ class ListenTrain {
     let paramList = doc.create('ul',null,div);
     this.trialParamDesc = {};
     for(const [param, text] of Object.entries(this.paramText)) {
+      if(param == 'visual' && this.visType == 'none') continue;
       let paramDiv = doc.create('div',null, paramList);
       doc.create('label',text,paramDiv);
       this.trialParamDesc[param] = doc.create('label', null, paramDiv);
@@ -103,7 +105,8 @@ class ListenTrain {
     };
     this.trialDesc.innerHTML = 'Training ' + trial['type'] + ' tones, round ' + (this.trialIdx[1]+1) + '/' + this.trials[this.trialIdx[0]].length + ':';
     this.trialDesc.style.backgroundColor = trial['color'];
-    for(const param of ['ref','same','injective']) {
+    for(const param of Object.keys(this.paramText)) {
+      if(param == 'visual' && this.visType == 'none') continue;
       this.trialParamDesc[param].innerHTML = this.paramSettings[trial[param]]['text'];
       this.trialParamDesc[param].style.backgroundColor = this.paramSettings[trial[param]]['color'];
     }
