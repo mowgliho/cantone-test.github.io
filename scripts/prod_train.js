@@ -19,10 +19,9 @@ class ProdTrain {
   ambientSilenceMin = -20;
 
 
-  timeLeft = 900*1000;//amount of time for the task.
   stimuli = Stimuli.getProdTrainStimuli(1, 1);
 
-  constructor(manager, doc, div, audio, share) {
+  constructor(manager, doc, div, audio, share, status) {
     this.audio = audio;
     this.share = share;
     this.manager = manager;
@@ -37,14 +36,25 @@ class ProdTrain {
     
     this.stateDependentButtons = [];
 
-    if(this.audioType == 'vocoded') {
-      this.vocoder = new WorldVocoder(this, this.tuneTime, this.mean);
-    }
+    this.vocoder = new WorldVocoder(this, this.tuneTime, this.mean);
 
     this.buildIntroDiv(doc, div);
     this.buildTrainDiv(doc, div, audio);
 
-    this.data = {round: [], click: [], contour: []};
+    this.trainDiv.style.display = 'none';
+    this.introDiv.style.display = 'block';
+
+    this.startOnVocoder = false;
+    this.round = null;
+    this.timeLeft = 900*1000;//amount of time for the task.
+
+    if(status != null) {
+      let tokens = status.split(' ');
+      this.timeLeft = parseInt(tokens[0]);
+      this.round = parseInt(tokens[1]);
+      if(this.timeLeft > 0) this.startOnVocoder = true;
+      else this.finish();
+    }
   }
 
   buildIntroDiv(doc, div) {
@@ -176,6 +186,7 @@ class ProdTrain {
 
   vocoderActive() {
     console.log('vocoder active');
+    if(this.startOnVocoder) this.startTraining();
   }
 
   addClick(type) {
@@ -236,7 +247,7 @@ class ProdTrain {
       const sampleRate = buffer.sampleRate;
       const array = combineChannels(buffer);
       that.changeState('ready');
-      let contour = that.audioType == 'vocoded'? that.vocoder.getF0Contour(array, sampleRate,that.worldParam).f0:cleanFrequencies(getFreq(buffer, 20));
+      let contour = that.vocoder.getF0Contour(array, sampleRate,that.worldParam).f0;
       contour = cleanFrequencies(contour);
       if(that.audioType == 'vocoded') for(var tuner of Object.values(that.tuners)) tuner.reactivate();
       if(contour.length > 0) {
@@ -324,6 +335,8 @@ class ProdTrain {
   startRound() {
     let stim = this.stimuli[this.stimIdx];
 
+    this.data = {click: [], contour: []};
+
     this.roundLabel.innerHTML = 'Round ' + (this.round+1) + (stim['type'] == 'test'?' (Test Round)':'');
     this.stimuliLabel.innerHTML = stim['syl'];
     this.stimuliToneLabel.innerHTML = stim['tone'];
@@ -399,11 +412,18 @@ class ProdTrain {
   }
 
   nextRound() {
+    const that = this;
+
+    const id = this.share.get('id');
     let stim = this.stimuli[this.stimIdx];
-    this.data['round'].push({round: this.round, syl: stim['syl'], tone: stim['tone'], time: (new Date()).getTime() - this.startTime });
-    this.round += 1;
-    this.stimIdx = this.round % this.stimuli.length;
-    this.startRound();
+    this.data['round'] = [{round: this.round, syl: stim['syl'], tone: stim['tone'], time: (new Date()).getTime() - this.startTime }];
+    uploadFiles(this.data, id, 'prod_train', this.round != 0, function() {
+      uploadProgress(id, 'prod_train',(that.endTime - (new Date()).getTime()) + ' ' + that.round, function() {
+        that.round += 1;
+        that.stimIdx = that.round % that.stimuli.length;
+        that.startRound();
+      });
+    });
   }
 
   adjustAudio() {
@@ -439,7 +459,6 @@ class ProdTrain {
     this.trainDiv.style.display = 'block';
     //set up timer
     this.startTimer();
-    this.round = 0;
     this.stimIdx = 0;
     this.startRound();
   }
@@ -463,18 +482,14 @@ class ProdTrain {
 
   stopTimer() {
     clearTimeout(that.timerTO);
-    this.timeLeft= this.endTime - (new Date()).getTime();
+    this.timeLeft = this.endTime - (new Date()).getTime();
   }
 
-  start() {
-    this.trainDiv.style.display = 'none';
-    this.introDiv.style.display = 'block';
-  }
+  start() {}
 
   finish() {
-    let id = this.share.get('id');
-    uploadFiles(Object.keys(this.data), this.data, id, 'prod_train');
-    this.manager.next();
+    const that = this;
+    uploadProgress(this.share.get('id'), 'prod_train','completed', function() { that.manager.next();});
   }
 
   static getDisplay(t) {
