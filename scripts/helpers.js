@@ -361,7 +361,7 @@ uploadAudioFile = function(blob, filename) {
 }
 
 uploadProgress = function(id, task, status, callback) {
-  uploadPlainTextFile(id, 'progress.txt', task + '\t' + status + '\n', true, callback);
+  uploadPlainTextFile(id, 'progress.txt', task + '\t' + status + '\t' + (new Date()).getTime() + '\n', true, callback);
 }
 
 getStatus = function(id, callback) {

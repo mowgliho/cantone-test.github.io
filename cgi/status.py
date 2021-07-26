@@ -17,7 +17,7 @@ try:
   fn = os.path.join(DATA, pid, PROGRESS)
 
   with open(fn,'r') as f:
-    task, status = f.readlines()[-1].strip().split('\t')
+    task, status, time = f.readlines()[-1].strip().split('\t')
 
   print("Content-type: text/plain\n")
   print(json.dumps({'task': task, 'status': status}))
