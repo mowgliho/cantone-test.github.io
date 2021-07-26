@@ -26,7 +26,7 @@ class TestManager {
     prod_train: ProdTrain,
     prod_test: ProdTest,
     feedback: Feedback,
-    end: null
+    end: End
   }
 
   constructor(doc, div) {
@@ -47,6 +47,8 @@ class TestManager {
       getStatus(this.share.get('id'), function(status) { 
         if(status['task'] == null) {//if no task, start from beginning
           that.startBlank();
+        } else if(status['task'] == 'end' && status['status'] == 'completed') {
+          that.showEnd();
         } else {
           getInfo(that.share.get('id'), function(y) {//get info
             if(y['data'] == null) {//if data is bad, start from beginning
@@ -109,6 +111,11 @@ class TestManager {
     this.startTask();
   }
 
+  showEnd() {
+    this.state = 'end';
+    this.status = 'completed';
+    this.startTask();
+  }
   next() {
     this.startNextTask(this.state);
   }

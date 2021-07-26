@@ -7,4 +7,5 @@ class Config {
   static audioCgi = 'https://homepages.inf.ed.ac.uk/cgi/s1640564/upload_audio.py';
   static stSd = 3;
   static worldFilePrefix = 'https://mowgliho.github.io/cantone.github.io/wav/humanum_world/';//TODO change to cantone-test
+  static prolificCompletion = '728BE412';
 }
