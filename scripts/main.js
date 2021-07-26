@@ -11,6 +11,7 @@ class TestManager {
     'prod_train',
     'prod_test',
     'feedback',
+    'end'
   ];
 
   classes = {
@@ -24,7 +25,8 @@ class TestManager {
     listen_test: ListenTest,
     prod_train: ProdTrain,
     prod_test: ProdTest,
-    feedback: null
+    feedback: Feedback,
+    end: null
   }
 
   constructor(doc, div) {
