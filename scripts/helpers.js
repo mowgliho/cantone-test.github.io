@@ -107,22 +107,26 @@ function  interpolateColor(start, end, j, n) {
   return 'rgba(' + arr.join(',') + ')';
 }
 
-function uploadFiles(keys, d, id, name) {
+function uploadFiles(keys, d, id, name, append, callback) {
+  if(keys.length == 0) {
+    callback();
+    return;
+  }
   const key = keys.pop();
   if(d[key].length > 0) {
     let data = d[key];
     let cols = Object.keys(data[0]);
 
-    var body = id + '_' + name + '_' + key + '.tsv\n';
-    body += cols.join('\t') + '\n'
+    var text = append?'': cols.join('\t') + '\n';
+    var filename = name + '_' + key + '.tsv';
     for(var row of data) {
-      body += cols.map((a) => row[a]).join('\t') + '\n'
+      text += cols.map((a) => row[a]).join('\t') + '\n'
     }
-    fetch(Config.plainTextCgi, { method: 'POST', body: body}).then(
-      (response) => {response.text().then(function(x) {console.log(x); if(keys.length > 0) uploadFiles(keys, d, id, name);})}).catch(
-      (error) => {console.log("error", error)});
+    uploadPlainTextFile(id, filename, text, append, function() {
+      uploadFiles(keys, d, id, name, append, callback);
+    });
   } else {
-    if(keys.length > 0) uploadFiles(keys, d, id, name);
+    uploadFiles(keys, d, id, name, append, callback);
   }
 }
 

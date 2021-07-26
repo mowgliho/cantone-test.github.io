@@ -26,7 +26,7 @@ class ListenTrain {
     false: {text:'no', color: 'lawngreen'}
   }
 
-  constructor(manager, doc, div, audio, share) {
+  constructor(manager, doc, div, audio, share, status) {
     const that = this;
 
     this.audio = audio;
@@ -64,9 +64,8 @@ class ListenTrain {
     this.nextButton = doc.create('button','Next',div);
     this.nextButton.onclick = function() { that.nextTrial() };
     
-    this.data = {trial: [], play: [], line: []};
-    this.trialIdx = [0,0];
-    this.trialId = 0;
+    this.trialId = status == null? 0: parseInt(status)+1;
+    this.trialIdx = this.getTrialIdx(this.trialId);
     this.startTrial();
   }
 
@@ -92,7 +91,7 @@ class ListenTrain {
   startTrial() {
     //ui stuff
     let trial = this.trials[this.trialIdx[0]][this.trialIdx[1]];
-    this.data['trial'].push({
+    this.trialData = {
       id: this.trialId,
       tones: trial['type'], 
       ref: trial['ref'],
@@ -101,7 +100,7 @@ class ListenTrain {
       visual: trial['visual'],
       vistype: this.visType,
       start: (new Date()).getTime()
-    });
+    };
     this.trialDesc.innerHTML = 'Training ' + trial['type'] + ' tones, round ' + (this.trialIdx[1]+1) + '/' + this.trials[this.trialIdx[0]].length + ':';
     this.trialDesc.style.backgroundColor = trial['color'];
     for(const param of ['ref','same','injective']) {
@@ -128,34 +127,52 @@ class ListenTrain {
     this.match.set(this.trialId, sources,targets, -1, true, !trial['ref'])
     
     this.nextButton.style.display = 'none';
+    this.nextButton.disabled = false;
   }
 
   nextTrial() {
+    const that = this;
+    const id = this.share.get('id');
+
+    this.nextButton.disabled = true;
+    this.trialData['end'] = (new Date()).getTime();
     let usageData = this.match.getUsageData();
+    let data = {};
     for(const [key,val] of Object.entries(usageData)) {
-      this.data[key] = this.data[key].concat(val);
+      data[key] = val;
     }
-    this.data['trial'][this.data['trial'].length - 1]['end'] = (new Date()).getTime();
-    this.trialIdx[1] += 1;
-    this.trialId += 1;
-    if(this.trialIdx[1] < this.trials[this.trialIdx[0]].length) this.startTrial();
-    else {
-      this.trialIdx = [this.trialIdx[0] + 1,0];
-      if(this.trialIdx[0] < this.trials.length) this.startTrial();
-      else this.finish();
+    data['trial'] = [this.trialData];
+    uploadFiles(Object.keys(data), data, id, 'listen_train', this.trialId != 0, function() {
+      uploadProgress(id, 'listen_train',that.trialId, function() {
+        that.trialId += 1;
+        that.trialIdx = that.getTrialIdx(that.trialId);
+        if(that.trialIdx != null) that.startTrial();
+        else that.finish();
+      });
+    });
+  }
+
+  getTrialIdx(round) {
+    var trialIdx = [0,0];
+    for(var i = 0; i < round; i++) {
+      trialIdx[1] += 1;
+      if(trialIdx[1] == this.trials[trialIdx[0]].length) {
+        trialIdx = [trialIdx[0] + 1, 0];
+        if(trialIdx[0] == this.trials.length) return null;
+      }
     }
+    return trialIdx;
   }
 
   correct() {
-    this.data['trial'][this.data['trial'].length - 1]['correct'] = (new Date()).getTime();
+    this.trialData['correct'] = (new Date()).getTime();
     this.match.correct();
     this.nextButton.style.display = 'block';
   }
 
   finish() {
-    this.nextButton.style.display = 'none';
-    uploadFiles(Object.keys(this.data), this.data, this.share.get('id'), 'listen_train');
-    this.manager.next();
+    const that = this;
+    uploadProgress(this.share.get('id'), 'listen_train','completed', function() { that.manager.next();});
   }
 
   start() {}
