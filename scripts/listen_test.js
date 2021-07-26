@@ -80,7 +80,6 @@ class ListenTest {
       round: [{round: this.idx, syl: this.stimuli[this.idx], start: this.startTime, end: (new Date()).getTime()}],
       click: this.clicks
     };
-    console.log(data);
     uploadFiles(data, id, 'listen_test', idx != 0, function() {
       uploadProgress(id, 'listen_test',idx, function() {
         that.idx += 1;
