@@ -15,8 +15,8 @@ class TaskIntro {
   constructor(manager, doc, div, audio, share) {
     this.manager = manager;
     this.audio = audio;
-    this.register(share, doc, div, audio);
     this.share = share;
+    this.build(doc,div,audio);
   }
 
   build(doc, div, audio) {
@@ -38,7 +38,7 @@ class TaskIntro {
     doc.create('hr', null,div);
 
     let button = doc.create('button','Start!', div);
-    button.onclick = function() {that.manager.next()};
+    button.onclick = function() {that.finish()};
   }
 
   buildToneIntro(doc, parentDiv, audio, visType) {
@@ -50,7 +50,7 @@ class TaskIntro {
     doc.create('h3', 'Tones', div);
     doc.create('label', 'Cantonese is a language spoken by over 80 million people in Southern China, Hong Kong, Macao, and around the world. Like the majority of the world\'s languages, it is a tonal language. This means that the "same" syllable can have different meanings when pronounced with different pitch contours.',div);
     doc.create('p',null,div);
-    doc.create('label','Cantonese is generally thought of as having 6 tones, with tones 1, 3, and 6 being classified as "level" tones, and tones 2, 4, and 5 being classified as "contour" tones.' + (visType == 'none'? '':' You can see them depicted in the diagram below. The x-axis represents time and the y-axis represents pitch.'),div);
+    doc.create('label','Cantonese is generally thought of as having 6 tones, with tones 1, 3, and 6 being classified as "level" tones, and tones 2, 4, and 5 being classified as "contour" tones.' + (visType == 'none'? '':' You can see them depicted in the diagram below, where the x-axis represents time and the y-axis represents pitch.'),div);
     doc.create('p',null,div);
     
     //diagram if applicable
@@ -80,14 +80,14 @@ class TaskIntro {
     doc.create('p', 'This study investigates how people learn to perceive, produce, and internalize Cantonese tones. It will consists of 4 parts:', div);
     let list = doc.create('ul',null,div);
     doc.create('li','Perception Training: You will match audio snippets to their corresponding tone labels, in a fashion similar to the matching game that you\'ve already played. The difficulty of the game will increase as you play.', list)
-    doc.create('li','Perception Test: You will hear an audio snippet. We will ask you which tone(s) was(were) produced; you will enter in the tone number(s) of your guess into a text box.', list)
+    doc.create('li','Perception Test: You will hear a syllable and click a button corresponding to the correct (hopefully) tone number.', list)
     doc.create('li','Production Training: ' + (this.share.get('audio') == 'exemplar'?
       'You will hear an audio sample and will attempt to imitate the pronunciation. You will be able to hear your attempts and the sample multiple times.':
-      'You will hear an audio sample where the audio has been manipulated to match your own vocal range. You will be able to "tune" your pitch to the starting and ending pitches of the syllable and see your attempted pitch contours mapped against a target contour'
+      'You will hear an audio sample of a syllable. You can also hear audio that has been manipulated to match your vocal range. You will be able to "tune" your pitch to the starting and ending pitches of the syllable and see your attempted pitch contours mapped against a target contour.'
     ), list)
-    doc.create('li','Production Test: You will be asked to record a particular syllable and tone combination (e.g. "say /si3/". You will be able to reattempt a question if you don\'t like your answer.', list)
+    doc.create('li','Production Test: You will be asked to record a particular syllable and tone combination (e.g. "say /si3/"). You will be able to reattempt if you don\'t like your answer.', list)
 
-    doc.create('p', 'After completing these parts, we will ask you to fill out a short questionnaire on your experience with the study. If you\'ve been inspired to learn Cantonese by the end of the study, we\'ll also provide you with a list of learning resources (and martial arts films) for you to continue learning.',div);
+    doc.create('p', 'Afterwards, we will ask you to fill out a short questionnaire on your experience with the study. If you\'ve been inspired to learn Cantonese, we\'ll also provide you with a list of learning resources (and martial arts films) for you to continue learning.',div);
   }
 
   playEx(button, tone, remaining) {
@@ -102,25 +102,12 @@ class TaskIntro {
     }
   }
 
-  //TODO change
-  register(share, doc, div, audio) {
+  start() {}
+
+  finish() {
     const that = this;
 
-    let fd = new FormData();
-    for(var x of ['id','st','ambientDbfs']) {
-      fd.append(x, share.get(x));
-    }
-
-    fetch(Config.registerCgi, { method: 'POST', body: fd}).then(
-      (response) => {response.text().then(function(x) {
-        let params = JSON.parse(x);
-        for(x of ['visual','audio']) {
-          that.share.save(x,params[x]);
-        }
-        that.build(doc,div,audio)
-      })}).catch(
-      (error) => {console.log("error", error)});
+    const id = this.share.get('id');
+    uploadProgress(id, 'task_intro','completed', function() {that.manager.next();});
   }
-
-  start() {}
 }
