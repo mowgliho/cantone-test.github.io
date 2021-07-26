@@ -110,6 +110,7 @@ function  interpolateColor(start, end, j, n) {
 function uploadFiles(d, id, name, append, callback) {
   let fileData = [];
   for(const [key,data] of Object.entries(d)) {
+    if(data.length == 0) continue;
     let cols = Object.keys(data[0]);
     var filename = name + '_' + key + '.tsv';
     var text = append?'': cols.join('\t') + '\n';
@@ -351,11 +352,11 @@ uploadPlainTextFile = function(id, filename, text, append, callback) {
 }
 
 
-uploadAudioFile = function(blob, filename) {
+uploadAudioFile = function(blob, filename, callback) {
   var fd = new FormData();
   fd.append('audio_data',blob,filename);
   fetch(Config.audioCgi, { method: 'POST', body: fd}).then(
-    (response) => {console.log(response)}).catch(
+    (response) => {callback()}).catch(
     (error) => {console.log("error", error)});
 }
 

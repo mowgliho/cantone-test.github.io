@@ -1,8 +1,12 @@
 class ProdTest {
   recordTime = 2;
   buttonBarWidth = 200;
+  colors = {
+    startRound: [135,206,250],
+    endRound: [224,255,255]
+  }
   
-  constructor(manager, doc, div, audio, share) {
+  constructor(manager, doc, div, audio, share, status) {
     const that = this;
 
     this.manager = manager;
@@ -16,8 +20,8 @@ class ProdTest {
 
     this.stimuli = Stimuli.getProdTestStimuli();
     
-    const startButton = doc.create('button', 'Start!', div);
-    startButton.onclick = function() {startButton.style.display = 'none'; that.startTest()};
+    this.startButton = doc.create('button', 'Start!', div);
+    this.startButton.onclick = function() {that.startTest()};
 
     doc.create('hr',null,div);
 
@@ -41,6 +45,7 @@ class ProdTest {
       function() {that.played()},
       function() {return that.share.get('micGain')});
     this.resetPb = pb['reset'];
+    this.offPb = pb['off'];
 
     let buttonDiv = doc.create('div',null,this.testDiv);
     buttonDiv.style.width = this.buttonBarWidth + 'px';
@@ -60,8 +65,11 @@ class ProdTest {
     this.recordButtons();//EWW: has to be before so that the order of event listeners is good.
     this.submitButton.onclick = function() { that.nextRound()};
 
-    this.data = {round: [], click: [], contour: []};
-    this.audio = {};
+    this.idx = 0;
+    if(status != null) {
+      this.idx = parseInt(status) + 1;
+      this.startTest();
+    }
   }
 
   recordButtons() {
@@ -85,7 +93,7 @@ class ProdTest {
     this.hasRecorded = true;
     this.update();
     this.numAttempts += 1;
-    this.audio[this.idx] = buffer;
+    this.audio = buffer;
   }
 
   played() {
@@ -93,7 +101,7 @@ class ProdTest {
   }
 
   startTest() {
-    this.idx = 0;
+    this.startButton.style.display = 'none';
     this.testDiv.style.display = 'block';
     this.startRound();
     this.hasRecorded = false;
@@ -106,6 +114,7 @@ class ProdTest {
 
   startRound() {
     this.roundLabel.innerHTML = 'Round ' + (this.idx + 1) + '/' + this.stimuli.length;
+    this.roundLabel.style.backgroundColor = interpolateColor(this.colors['startRound'], this.colors['endRound'], this.idx, this.stimuli.length);
     let syl = this.stimuli[this.idx];
     this.resetPb();
     this.sylLabel.innerHTML = syl['syl'];
@@ -114,31 +123,38 @@ class ProdTest {
 
     this.startTime = (new Date()).getTime();
     this.numAttempts = 0;
+    this.data = {click: [], contour: []};
   }
 
   nextRound() {
+    this.submitButton.disabled = true;
+    this.offPb();
+
+    const that = this;
+
+    const id = this.share.get('id');
     //do gathering of data
     let syl = this.stimuli[this.idx];
-    this.data['round'].push({round: this.idx, syl: syl['syl'], tone: syl['tone'], attempts: this.numAttempts, time: (new Date()).getTime() - this.startTime});
-
-    this.idx += 1;
-    if(this.idx < this.stimuli.length) {
-      this.startRound();
-    } else {
-      this.finish();
-    }
+    this.data['round'] = [{round: this.idx, syl: syl['syl'], tone: syl['tone'], attempts: this.numAttempts, time: (new Date()).getTime() - this.startTime}];
+    uploadFiles(this.data, id, 'prod_test', this.idx != 0, function() {
+      uploadProgress(id, 'prod_test', that.idx , function() {
+        let blob = bufferToWave(that.audio, that.audio.length);
+        uploadAudioFile(blob, id + '_prod_test_' + that.idx + '.wav', function() {
+          that.idx += 1;
+          if(that.idx < that.stimuli.length) {
+            that.startRound();
+          } else {
+            that.finish();
+          }
+        });
+      });
+    });
   }
 
   finish() {
-    let id = this.share.get('id');
-    uploadFiles(Object.keys(this.data), this.data, id, 'prod_test');
-    for(const [round, buffer] of Object.entries(this.audio)) {
-      let blob = bufferToWave(buffer, buffer.length);
-      uploadAudioFile(blob, id + '_prod_test_' + round + '.wav');
-    }
-    this.manager.next();
+    const that = this;
+    uploadProgress(this.share.get('id'), 'prod_train','completed', function() { that.manager.next();});
   }
 
   start(){};
-
 }
