@@ -30,14 +30,14 @@ class ToneContours {
     return contourPts;
   }
 
-  //range for humanum data is 29-45, i.e. 16 semitones. However, in the model, we normalized by sd, so we divided by 5.2st, making the range 3.08 sds. The range for the idealized is 4 sds. So to equalize we scale by 4/3.08
+  //stuff was calculated with humanum st as 5.2, so we have to adjust to the St sd that we use here.
   static getCubicContour(tone, pts, sd) {
     let max = ToneContours.dataCubics[tone]['max'];
     let coefs = ToneContours.dataCubics[tone]['coefs'];
     let contourPts = [];
     for(var i = 0; i <= pts; i++) {
       let t = max*(i/pts);
-      contourPts.push([t, (4/3.08)*sd*(coefs[0] + coefs[1]*t + coefs[2]*(t**2) + coefs[3]*(t**3))])
+      contourPts.push([t, (5.2/Config.stSd)*sd*(coefs[0] + coefs[1]*t + coefs[2]*(t**2) + coefs[3]*(t**3))])
     }
     return contourPts;
   }
@@ -69,8 +69,7 @@ class ToneContours {
       const maxY = contours.reduce((a,contour) => Math.max(a, contour.reduce((b,c) => Math.max(b,c[1]),0)),0)
       const minY = contours.reduce((a,contour) => Math.min(a, contour.reduce((b,c) => Math.min(b,c[1]),0)),0)
       let x = (t) => (ToneContours.margin/2 + (t/maxT)*(1-ToneContours.margin - textSize/canvas.width))*canvas.width;
-//      let y = (st) => (1-(ToneContours.margin/2 + (st-minY)/(maxY-minY)*(1-ToneContours.margin)))*canvas.height;
-      let y = (st) => (1-(0.5 + (st)/(ToneContours.canvasHeightSd)*(1-ToneContours.margin)))*canvas.height;
+      let y = (st) => (1-(0.5 + (st)/(ToneContours.canvasHeightSd)))*canvas.height;
       for(var i = 0; i < ToneContours.tones.length; i++) {
         let t = ToneContours.tones[i];
         let contour = contours[i];
