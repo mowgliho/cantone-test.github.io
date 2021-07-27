@@ -8,6 +8,7 @@ class Intro {
 
     this.manager = manager;
     //intro
+    doc.create('h2','Introduction',div);
     let label = doc.create('label', "Thanks for agreeing to participate! Your anonymous identification number is ",div);
     label = doc.create('label', share.get('id'),div);
     label.style.color = this.idColor;

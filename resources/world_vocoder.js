@@ -23,7 +23,7 @@ class WorldVocoder {
   //to be updated
   mean;
 
-  constructor(trainer, tuningDuration, mean) {
+  constructor(trainer, tuningDuration, mean, visType) {
     const that = this;
 
     this.tuningDuration = tuningDuration;
@@ -40,6 +40,7 @@ class WorldVocoder {
     this.world = null;
     this.wait = null;
     this.ready = false;
+    this.visType = visType;
   } 
 
   activate() {
@@ -129,7 +130,7 @@ class WorldVocoder {
       //get the desired spectrum, aperiodicty, f0
       const spectrum = this.getMedians(this.spectral.slice(startIdx, endIdx));
       const aperiodicity = this.getMedians(this.aperiodicity.slice(startIdx, endIdx));
-      const f0 = ToneContours.semitoneToFreq(ToneContours.getTuningHumanumSt(this.mean, this.tone, type));
+      const f0 = ToneContours.semitoneToFreq(ToneContours.getTuningHumanumSt(this.mean, this.tone, type, this.visType));
       //repeat for desired length
       const indicesPerSecond = this.f0.length/(charSamples.length/this.sampleRate);
       const numInds = Math.max(1,Math.round(indicesPerSecond*this.tuningDuration));

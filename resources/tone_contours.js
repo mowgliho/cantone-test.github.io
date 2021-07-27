@@ -129,9 +129,13 @@ class ToneContours {
     return st - ToneContours.humanumMean 
   }
 
-  static getTuningHumanumSt(st, tone, type) {
-    let shift = ToneContours.getHumanumShift(st);
-    return ToneContours.humanumTuneSts[type][tone] + shift;
+  static getTuningHumanumSt(st, tone, type, visType) {
+    if(visType == 'data') {
+      let shift = ToneContours.getHumanumShift(st);
+      return ToneContours.humanumTuneSts[type][tone] + shift;
+    } else if(visType == 'idealized') {
+      return st + (ToneContours.idealizedChao['t' + tone][type == 'start'?0:1] - 3)*Config.stSd;
+    }
   }
 
 }

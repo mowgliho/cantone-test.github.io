@@ -136,7 +136,7 @@ class Tuning {
     Tuning.clearCanvas(this.canvas);
     if(this.line != null) Tuning.drawLine(this.canvas, this.line,this.colors['guide']);
     if(this.attempt != null) {
-      let color = Math.abs(this.attempt-this.line) < Tuning.closeTune? this.colors['close']:this.colors['far'];
+      let color = ((Math.abs(this.attempt-this.line) < Tuning.closeTune) || (this.state == 'tuned'))? this.colors['close']:this.colors['far'];
       Tuning.drawLine(this.canvas, this.attempt, color);
     }
   }

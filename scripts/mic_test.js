@@ -53,7 +53,7 @@ class MicTest {
     //vocal check
     this.vocalDiv = doc.create('div',null,div);
     doc.create('p', 'Let\'s check the calibration by trying to match pitches. Below are 5 pitches represented by black lines. On clicking "Start", you will hear a tone, which will last for ' + this.checkTuneTime + ' seconds. When the tone ends, match (hum or sing) the tone. A line should appear with your pitch - match the black line. When you have approximately matched for ' + this.checkMatchTime + ' seconds, recording will stop.', this.vocalDiv);
-    doc.create('p', 'Match all 5 to go on. If the pitches are too high or too low, you may click the "Shift pitches up/down" buttons. Note that when you do this you will have to do all 5 again with the new pitches.',this.vocalDiv);
+    doc.create('p', 'Match all 5 to go on. If the pitches are too high or too low for you, you may click the "Shift pitches up/down" buttons. Note that when you do this you will have to do all 5 again with the new pitches.',this.vocalDiv);
     doc.create('p','Then click "Next".', this.vocalDiv);
     doc.create('hr',null,this.vocalDiv);
     const upButton = doc.create('button', 'Shift pitches up',this.vocalDiv);

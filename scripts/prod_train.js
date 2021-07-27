@@ -36,7 +36,7 @@ class ProdTrain {
     
     this.stateDependentButtons = [];
 
-    this.vocoder = new WorldVocoder(this, this.tuneTime, this.mean);
+    this.vocoder = new WorldVocoder(this, this.tuneTime, this.mean, this.visType);
 
     this.timeLeft = 900*1000;//amount of time for the task.
 
@@ -353,7 +353,7 @@ class ProdTrain {
 
     if(this.audioType == 'vocoded') {
       for(const [type,tuner] of Object.entries(this.tuners)) {
-        const st = ToneContours.getTuningHumanumSt(this.mean, stim['tone'], type);
+        const st = ToneContours.getTuningHumanumSt(this.mean, stim['tone'], type, this.visType);
         const z = (st - this.mean)/Config.stSd;
         tuner.set(this.mean, z, Config.stSd);
       }
