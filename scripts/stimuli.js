@@ -153,7 +153,7 @@ class Stimuli {
   static pcptCanto(reference, contourTones, inj) {
     let ret = [];
     const tones = contourTones? ['2','4','5']: ['1','3','6'];
-    const segs = reference?['si']:['ji','jyu','haam','wan'];
+    const segs = reference?['si']:['jyu','haam'];
     for(var i = 0; i < tones.length; i++) {
       let seg = segs[Math.floor(Math.random()*segs.length)];
       let tone = inj? tones[i]: tones[Math.floor(Math.random()*tones.length)];
