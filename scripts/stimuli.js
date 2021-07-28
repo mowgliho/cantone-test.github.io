@@ -18,7 +18,7 @@ class Stimuli {
 
   static prodTest = [
     {syl: 'jan', desc: 'This sound starts with a "y" sound, like the beginning of "you". The rest of the syllable rhymes with the "un" of "fun"'},
-    {syl: 'ji', desc: 'This sound is similar to the "ee" the English word "see".'},
+    {syl: 'ji', desc: 'This sound starts with a "y" sound, like the beginning of "you". The rest is similar to the "ee" the English word "see".'},
     {syl: 'si', desc: 'This sound is pronounced like the English words "see" and "sea".'},
     {syl: 'fan', desc: 'This sound is pronounced like the English word "fun".'}
   ]

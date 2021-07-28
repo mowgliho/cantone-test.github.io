@@ -47,12 +47,12 @@ class ProdTrain {
     this.introDiv.style.display = 'block';
 
     this.startOnVocoder = false;
-    this.round = null;
+    this.round = 0;
 
     if(status != null) {
       let tokens = status.split(' ');
       this.timeLeft = parseInt(tokens[0]);
-      this.round = parseInt(tokens[1]);
+      this.round = parseInt(tokens[1]) + 1;
       if(this.timeLeft > 0) this.startOnVocoder = true;
       else this.finish();
     }
@@ -116,16 +116,23 @@ class ProdTrain {
 
     this.exButton = this.getExemplarButton(doc);
 
-    let trainPb = this.buildPlayback(doc);
-    this.resetPb = trainPb['reset'];
-    this.offPb = trainPb['off'];
-    this.onPb = trainPb['on'];
+    const trainPb = this.buildPlayback(doc,'train');
+    const testPb = this.buildPlayback(doc,'test');
+    
+    this.resetPb = function() { trainPb.reset(); testPb.reset()};
+    this.offPb = function() { trainPb.off(); testPb.off()};
+    this.onPb = function() { trainPb.on(); testPb.on()};
     for(const key of ['record','playback']) {
-      trainPb[key].addEventListener('click',function() {that.addClick(key)});
+      trainPb.get(key).addEventListener('click',function() {that.addClick(key)});
+      testPb.get(key).addEventListener('click',function() {that.addClick(key)});
     }
+
+    //test UI
+    this.testUI = doc.create('div',null,trainDiv);
+    this.testUI.appendChild(this.getButtonBar(doc, [testPb.get('record'), testPb.get('playback')]));
+
+    //train UI
     this.trainUI = doc.create('div',null,trainDiv);
-    let buttonBar = this.getButtonBar(doc, [this.exButton, trainPb['record'], trainPb['playback']]);
-    trainDiv.appendChild(buttonBar);
 
     if(this.visType != 'none') {
       let canvasDiv = doc.create('div',null,null);
@@ -139,6 +146,8 @@ class ProdTrain {
 
       if(this.audioType == 'exemplar') {
         this.trainUI.appendChild(canvasDiv);
+        let buttonBar = this.getButtonBar(doc, [this.exButton, trainPb.get('record'), trainPb.get('playback')]);
+        this.trainUI.appendChild(buttonBar);
       } else {//vocoded
         this.tuners = {};
         for(const x of ['start','end']) {
@@ -167,9 +176,12 @@ class ProdTrain {
         tryDiv.appendChild(canvasDiv);
         let vocodedButton = this.getVocodedButton(doc);
         tryDiv.appendChild(this.getButtonBar(doc, [this.exButton, vocodedButton]));
-        tryDiv.appendChild(this.getButtonBar(doc, [trainPb['record'], trainPb['playback']]));
+        tryDiv.appendChild(this.getButtonBar(doc, [trainPb.get('record'), trainPb.get('playback')]));
         doc.create('p',null,trainDiv);
       }
+    } else {
+      let buttonBar = this.getButtonBar(doc, [this.exButton, trainPb.get('record'), trainPb.get('playback')]);
+      this.trainUI.appendChild(buttonBar);
     }
 
     //control playback volume
@@ -259,8 +271,8 @@ class ProdTrain {
 
     const playbackCallback = function() {that.changeState('ready')};
 
-    let silence = Math.max(this.share.get('ambientDbfs') + this.ambientSilenceBuffer, this.ambientSilenceMin);
-    let ret = definePlayback(doc, this.recordTime, {fn: this.ambientNoise(silence,this.ambientDetectThreshold), interval: 20}, startFn, recordedCallback, playbackCallback, volFn);
+    const silence = Math.max(this.share.get('ambientDbfs') + this.ambientSilenceBuffer, this.ambientSilenceMin);
+    const ret = new Playback(doc, this.recordTime, {fn: this.ambientNoise(silence,this.ambientDetectThreshold), interval: 20}, startFn, recordedCallback, playbackCallback, volFn);
 
     return ret;
   }
@@ -345,6 +357,7 @@ class ProdTrain {
     //test ui vs train ui
     this.exButton.style.visibility = stim['type'] == 'test'?'hidden':'visible';
     this.trainUI.style.display = stim['type'] == 'test'?'none':'block';
+    this.testUI.style.display = stim['type'] != 'test'?'none':'block';
 
     //update audio stuff
     if(this.visType != 'none') {

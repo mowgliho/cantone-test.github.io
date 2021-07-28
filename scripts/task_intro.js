@@ -87,7 +87,7 @@ class TaskIntro {
     ), list)
     doc.create('li','Production Test: You will be asked to record a particular syllable and tone combination (e.g. "say /si3/"). You will be able to reattempt if you don\'t like your answer.', list)
 
-    doc.create('p', 'Afterwards, we will ask you to fill out a short questionnaire on your experience with the study. If you\'ve been inspired to learn Cantonese, we\'ll also provide you with a list of learning resources (and martial arts films) for you to continue learning.',div);
+    doc.create('p', 'Afterwards, we will ask you to fill out a short questionnaire on your experience with the study.',div);
   }
 
   playEx(button, tone, remaining) {
