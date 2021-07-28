@@ -19,7 +19,7 @@ class ProdTrain {
   ambientSilenceMin = -20;
 
 
-  stimuli = Stimuli.getProdTrainStimuli(1, 1);
+  stimuli = Stimuli.getProdTrainStimuli();
 
   constructor(manager, doc, div, audio, share, status) {
     this.audio = audio;

@@ -2,17 +2,9 @@ class ListenTrain {
   visSize = {side:300, text:15};
 
   toneSets = [
-    {type: 'level', n: 2, color: 'lavender',tones: ['t1','t3','t6']},
-    {type: 'contour', n: 2, color: '#BCB88A',tones: ['t2','t4','t5']},
-    {type: 'all', n: 1, color: '#FFA07A',tones:null}
-  ]
-
-  paramSets = [
-    {ref: true, same: true, injective: true, visual: true},
-    {ref: false, same: true, injective: true, visual: true},
-    {ref: false, same: false, injective: true, visual: true},
-    {ref: false, same: false, injective: false, visual: true},
-    {ref: false, same: false, injective: false, visual: false}
+    {type: 'level', color: 'lavender', tones: ['t1','t3','t6']},
+    {type: 'contour', color: '#BCB88A', tones: ['t2','t4','t5']},
+    {type: 'all', color: '#FFA07A', tones: null}
   ]
 
   paramText = {
@@ -28,6 +20,8 @@ class ListenTrain {
   }
 
   constructor(manager, doc, div, audio, share, status) {
+    this.stimuli = Stimuli.getListenTrainStimuli();
+
     const that = this;
 
     this.audio = audio;
@@ -74,16 +68,21 @@ class ListenTrain {
   buildTrials() {
     const trials = [];
     for(var tones of this.toneSets) {
+      let type = tones['type'];
+      let stim = this.stimuli[type];
       const trialSet = [];
-      for(var params of this.paramSets) {
-        for(var i = 0; i < tones['n']; i++) {
-          const param = {type:tones['type'], n: i, color: tones['color'], tones: tones['tones']};
-          for(const [key,val] of Object.entries(params)) {
-            if(key == 'visual' && this.visType == 'none') param[key] = false;
-            else param[key] = val
-          }
-          trialSet.push(param);
-        }
+      for(const st of stim) {
+        trialSet.push({
+          type:type, 
+          color: tones['color'], 
+          tones: tones['tones'],
+          sources: st['sources'], 
+          targets: st['targets'], 
+          visual: this.visType == 'none'? false: st['params']['visual'],
+          ref: st['params']['ref'],
+          same: st['params']['same'],
+          injective: st['params']['injective']
+        });
       }
       trials.push(trialSet);
     }
@@ -124,9 +123,8 @@ class ListenTrain {
     }
 
     //match stuff
-    let stimuli = Stimuli.getListenTrainStimuli(trial['type'], trial['same'], trial['injective'], trial['n']);
-    let sources = stimuli['sources'].map((a) => {return {fn: this.audio.humanum(a['syl']), tone: a['tone']}});
-    let targets = stimuli['targets'].map((a) => {return {fn: this.audio.humanum(a['syl']), tone: a['tone']}});
+    let sources = trial['sources'].map((a) => {return {fn: this.audio.humanum(a['syl']), tone: a['tone']}});
+    let targets = trial['targets'].map((a) => {return {fn: this.audio.humanum(a['syl']), tone: a['tone']}});
     this.match.set(this.trialId, sources,targets, -1, true, !trial['ref'])
     
     this.nextButton.style.display = 'none';

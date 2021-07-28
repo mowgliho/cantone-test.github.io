@@ -6,16 +6,15 @@ class Stimuli {
   }
 
   static listenTrain = {
-    level: ['laai','ze','wui','gwan','sing','faan'],
-    contour: ['hang','waan','wun','nin','cin','cung'],
-    all: ['hon','ham','hau','jiu','joeng','soeng','se']
+    ref: ['si'],
+    voiced: ['jan','jau','wai'],
+    fric: ['soeng','seoi','si'],
+    fricbutref: ['soeng','seoi'],
+    allbutref: ['jan','jau','wai','soeng','seoi'],
+    all: ['si','jan','jau','wai','soeng','seoi']
   }
 
-  static prodTrain = {
-    level: ['wui','gwan'],
-    contour: ['hang','waan'],
-    all: ['hon','ham']
-  }
+  static prodTrain = ['jan','jau','wai','wan'];
 
   static prodTest = [
     {syl: 'jan', desc: 'This sound starts with a "y" sound, like the beginning of "you". The rest of the syllable rhymes with the "un" of "fun"'},
@@ -24,61 +23,123 @@ class Stimuli {
     {syl: 'fan', desc: 'This sound is pronounced like the English word "fun".'}
   ]
 
-  //returns array: source goes to source syllables; target goes to an array of dicts, which point to tone and syl 
-  static getListenTrainStimuli(type, same, injective, nTrial) {
-    let stimuli = Stimuli.listenTrain[type];
-    let tones = injective? shuffleArray(Stimuli.tones[type]): Stimuli.getTones(Stimuli.tones[type]);
-    let ret = [];
-    for(var i = 0; i < tones.length; i++) {
-      let seg;
-      if(i == 0) seg = stimuli[Math.floor(Math.random()*stimuli.length)];
-      else seg = same?ret[i-1]['seg']:stimuli[Math.floor(Math.random()*stimuli.length)];
-      ret.push({'seg':seg, tone:tones[i]});
-    }
-    let sourceStimuli = ret.map((a) => { return {tone: a['tone'], syl: a['seg'] + a['tone']}});
-    let targetStimuli = Stimuli.tones[type].map((t) => {return {tone: t, syl: 'si' + t}})
-    return {sources: sourceStimuli, targets: targetStimuli};
-  }
+  static getListenTrainStimuli() {
+    let lt = Stimuli.listenTrain;
 
-  static getListenTestStimuli(n) {
-    return shuffleArray(['1','2','3','4','5','6'].map((a) => ['si' + a, 'jiu' + a]).reduce((a,b) => a.concat(b),[]));
-  }
+    let stimuli = {level:[], contour: [], all: []};
 
-  //should return a pretty long list, from easiest to hardest, but repeating (as no vocoding is likely to take much shorter)
-  // when don't show graph, have to be a segmental that we already know.
-  // returns n*27 trials, followed by random stimuli
-  // in training, can loop
-  // not random
-  static getProdTrainStimuli(n, totalN) {
-    let stimuli = [];
-    for(const type of ['level','contour','all']) {
-      let trainStimuli = Stimuli.prodTrain[type].slice(0,type == 'all'?n:2*n);
-      let testStimuli = Stimuli.prodTrain[type].slice(trainStimuli.length, type == 'all'?2*n:3**n);
-      for(const [key, val] of Object.entries({train: trainStimuli, test: testStimuli})) {
-        stimuli = stimuli.concat(val.map((a) => Stimuli.tones[type].map((b) => { return {tone: b, type: key, syl: a + b}})).reduce((a,b) => a.concat(b), []));
+    const counts = {};
+    for(const syls of Object.values(lt)) {
+      for(const syl of syls) {
+        for(const t of this.tones['all']) {
+          counts[syl + t] = {tone: t, seg: syl, count: 0};
+        }
       }
     }
-    if(totalN <= stimuli.length) return stimuli.slice(0,totalN);
-    else {
-      var ind = 0;
-      while(stimuli.length < totalN) {
-        let tone = Stimuli.tones['all'][Math.floor(Math.random() * Stimuli.tones['all'].length)];
-        let syl = Stimuli.prodTrain['all'][Math.floor(Math.random() * Stimuli.prodTrain['all'].length)];
-        stimuli.push({tone: tone, type: ind % 3 == 2? 'test':'train', syl: syl + tone}) 
-        ind += 1;
+    const f = function(type, sources, targets, params) {
+      stimuli[type].push({sources:sources, targets: targets, params: params});
+      for(var source of sources) counts[source['syl']]['count'] += 1;
+    }
+    
+    let syl = {};
+    for(const s of lt['voiced'].concat(lt['fric'])) syl[s] = {level:0, contour:0, all: 0};
+    const pick = function(n, type, frication, params) {
+      let candidates = Object.keys(syl).filter((k) => ((syl[k][type] < 3) && (lt[frication].includes(k))));
+      let s = shuffleArray(candidates).slice(0,n);
+      for(const seg of s) {
+        if(type == 'all') { syl[seg]['level'] += 1; syl[seg]['contour'] += 1;}
+        else { syl[seg][type] += 1;}
+        syl[seg]['all'] = Math.max(syl[seg]['level'],syl[seg]['contour']);
+        let sources = shuffleArray(Stimuli.tones[type].map((t) => { return {tone: t, syl: seg + t}}));
+        let targets = Stimuli.tones[type].map((t) => { return {tone: t, syl: 'si' + t}});
+        f(type, sources, targets, params);
       }
+    }
+
+    const pickDiff = function(type, injective, params) {
+      let candidates = Object.keys(counts).filter((k) => (Stimuli.tones[type].includes(counts[k]['tone']) && counts[k]['count'] < 3));
+      let s;
+      if(injective) {
+        s = Stimuli.tones[type].map((t) => shuffleArray(candidates.filter((k) => counts[k]['tone'] == t))[0])
+      } else {
+        s = shuffleArray(candidates).slice(0,Stimuli.tones[type].length);
+      }
+      let sources = shuffleArray(s).map((syl) => { return {tone: syl.slice(-1), syl: syl}});
+      let targets = Stimuli.tones[type].map((t) => { return {tone: t, syl: 'si' + t}});
+      f(type,sources,targets, params);
+    }
+
+    //fill with most restrictive first
+    let pickOrder = [
+      {n: 2, type: 'all', frication: 'allbutref', params: {ref: true, visual: true, same: true, injective:true}},
+      {n: 1, type: 'all', frication: 'all', params: {ref: false, visual: true, same: true, injective:true}},
+      {n: 2, type: 'level', frication: 'voiced', params: {ref: true, visual: true, same: true, injective:true}},
+      {n: 2, type: 'level', frication: 'fricbutref', params: {ref: true, visual: true, same: true, injective:true}},
+      {n: 2, type: 'contour', frication: 'voiced', params: {ref: true, visual: true, same: true, injective:true}},
+      {n: 2, type: 'contour', frication: 'fricbutref', params: {ref: true, visual: true, same: true, injective:true}},
+      {n: 1, type: 'level', frication: 'voiced', params: {ref: false, visual: true, same: true, injective:true}},
+      {n: 1, type: 'level', frication: 'fric', params: {ref: false, visual: true, same: true, injective:true}},
+      {n: 1, type: 'contour', frication: 'voiced', params: {ref: false, visual: true, same: true, injective:true}},
+      {n: 1, type: 'contour', frication: 'fric', params: {ref: false, visual: true, same: true, injective:true}}
+    ]
+    for(const info of pickOrder) {
+      pick(info['n'],info['type'],info['frication'], info['params']);
+    }
+    
+    let pickDiffOrder = [
+      {type: 'level', inj: true, n: 2, params: {ref: false, visual: true, same: false, injective:true}},
+      {type: 'contour', inj: true, n: 2, params: {ref: false, visual: true, same: false, injective:true}},
+      {type: 'all', inj: true, n: 1, params: {ref: false, visual: true, same: false, injective:true}},
+      {type: 'level', inj: false, n: 2, params: {ref: false, visual: true, same: false, injective:false}},
+      {type: 'contour', inj: false, n: 2, params: {ref: false, visual: true, same: false, injective:false}},
+      {type: 'all', inj: false, n: 1, params: {ref: false, visual: true, same: false, injective:false}},
+      {type: 'level', inj: false, n: 2, params: {ref: false, visual: false, same: false, injective:false}},
+      {type: 'contour', inj: false, n: 2, params: {ref: false, visual: false, same: false, injective:false}},
+      {type: 'all', inj: false, n: 1, params: {ref: false, visual: false, same: false, injective:false}}
+
+    ]
+    for(const info of pickDiffOrder) {
+      for(var i = 0; i < info['n']; i++) {
+        pickDiff(info['type'], info['inj'], info['params']);
+      }
+    }
+    if ((Object.keys(counts).filter((k) => (counts[k]['count'] != 3))).length != 0) {
+      console.log('repicking');
+      return Stimuli.getListenTrainStimuli();
+    } else {
       return stimuli;
     }
   }
 
+  static getListenTestStimuli(n) {
+    return shuffleArray(Stimuli.tones['all'].map((t) => ['seon','jyun','si','jan','seoi'].map((a) => a + t)).reduce((a,b) => a.concat(b), []));
+  }
+
+  //divides stimuli into two groups. Trains level tones on all of one group, then random of one group, then with contour, then swap.
+  static getProdTrainStimuli() {
+    const f = function(syl, t, trainType) { return {tone: t, type: trainType, syl: syl + t}};
+    let seg = shuffleArray(Stimuli.prodTrain);
+    let groups = [0,1].map((a) => (seg.filter((x,i) => (i % 2 == a))));//put odds in one group, even in other group
+
+    let stimuli = [];
+    for(const x of [0,1]) {
+      for(const [i,type] of ['level','contour'].entries()) {
+        let group = groups[(x+i)%2];
+        stimuli = stimuli.concat(group.map((a) => shuffleArray(Stimuli.tones[type].map((b) => f(a,b,'train')))).reduce((a,b) => a.concat(b),[]));
+        stimuli = stimuli.concat(Stimuli.tones[type].map((t) => (f(group[Math.floor(Math.random()*group.length)],t,'test'))));
+      }
+    }
+    return stimuli;
+  }
+
   static getProdTestStimuli() {
     let stimuli = [];
-    for(var s of Stimuli.prodTest) {
-      for(var t of Stimuli.tones['all']) {
+    for(var s of shuffleArray(Stimuli.prodTest)) {
+      for(var t of shuffleArray(Stimuli.tones['all'])) {
         stimuli.push({syl: s['syl'] + t, desc: s['desc'], tone: t});
       }
     }
-    return shuffleArray(stimuli);
+    return stimuli;
   }
 
   static getTones(tones) {

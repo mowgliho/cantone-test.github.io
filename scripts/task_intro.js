@@ -79,7 +79,7 @@ class TaskIntro {
     doc.create('h3', 'Task', div);
     doc.create('p', 'This study investigates how people learn to perceive, produce, and internalize Cantonese tones. It will consists of 4 parts:', div);
     let list = doc.create('ul',null,div);
-    doc.create('li','Perception Training: You will match audio snippets to their corresponding tone labels, in a fashion similar to the matching game that you\'ve already played. The difficulty of the game will increase as you play.', list)
+    doc.create('li','Perception Training: You will match audio snippets to their corresponding tone labels, in a fashion similar to the matching game that you\'ve already played. The difficulty of the game will increase as you play. PLEASE NOTE: For some rounds, deduction by elimination will NOT work: check the "in this round" instructions for each round.', list)
     doc.create('li','Perception Test: You will hear a syllable and click a button corresponding to the correct (hopefully) tone number.', list)
     doc.create('li','Production Training: ' + (this.share.get('audio') == 'exemplar'?
       'You will hear an audio sample and will attempt to imitate the pronunciation. You will be able to hear your attempts and the sample multiple times.':
