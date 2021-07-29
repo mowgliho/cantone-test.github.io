@@ -1,6 +1,7 @@
 class WorldVocoder {
   static worldJSSpeed = 16;
   static checked = ['p','t','k'];
+  static charExceptions = ['jau6'];
   static cutpoints = {checked:{start:0.5,end:0.5},normal:{start:0.2,end:0.8}};
   static apThreshold = 0.5
   static minApBand = 5;
@@ -61,6 +62,8 @@ class WorldVocoder {
 
     const that = this;
 
+    const speed = WorldVocoder.charExceptions.includes(char)? WorldVocoder.worldJSSpeed/4: WorldVocoder.worldJSSpeed;
+
     this.ready = false;
 
     this.audioBuffers = {};
@@ -71,7 +74,7 @@ class WorldVocoder {
     const req = new XMLHttpRequest();
     req.open('GET', url);
     req.responseType = 'arraybuffer';
-    req.onload = function(e) {that.loadAudio(req.response, callback)};
+    req.onload = function(e) {that.loadAudio(req.response, callback, speed)};
     req.send();
   }
 
@@ -79,13 +82,13 @@ class WorldVocoder {
     return this.world.Dio(buffer,sampleRate, param);
   }
 
-  loadAudio(arraybuffer, callback) {
+  loadAudio(arraybuffer, callback, speed) {
     const that = this;
 
     this.audioCtx.decodeAudioData(arraybuffer).then(function(audio) {
       that.sampleRate = audio.sampleRate;
       var buffer = combineChannels(audio);
-      const f0 = that.getF0Contour(buffer, that.sampleRate, WorldVocoder.worldJSSpeed);
+      const f0 = that.getF0Contour(buffer, that.sampleRate, speed);
       const sp = that.world.CheapTrick(buffer, f0.f0, f0.time_axis, that.sampleRate);
       const ap = that.world.D4C(buffer, f0.f0, f0.time_axis, sp.fft_size, that.sampleRate);
       that.f0 = f0.f0;
@@ -93,11 +96,11 @@ class WorldVocoder {
       that.aperiodicity = ap.aperiodicity;
       that.fft_size = sp.fft_size;
       that.audioLoaded = true;
-      that.synthesizeAudio(callback);
+      that.synthesizeAudio(callback, speed);
     });
   }
 
-  synthesizeAudio(callback) {
+  synthesizeAudio(callback, speed) {
     const that = this;
 
     const getAudioFn = function(samples) {
@@ -116,7 +119,7 @@ class WorldVocoder {
     //shift for whole syllable
     const shift = ToneContours.getHumanumShift(this.mean);
     const charf0 = ToneContours.semitoneArrayToFreq(ToneContours.freqArrayToSemitone(this.f0, shift));
-    const charSamples = WorldVocoder.float64To32(this.world.Synthesis(charf0, this.spectral, this.aperiodicity, this.fft_size, this.sampleRate, WorldVocoder.worldJSSpeed));
+    const charSamples = WorldVocoder.float64To32(this.world.Synthesis(charf0, this.spectral, this.aperiodicity, this.fft_size, this.sampleRate, speed));
     ret['char'] = getAudioFn(charSamples);
     //beginning elements
     const [voiceStart,voiceEnd] = this.getVoicedIndices(this.aperiodicity);
@@ -137,7 +140,7 @@ class WorldVocoder {
       const spectra = this.duplicate(spectrum, numInds);
       const aperioda = this.duplicate(aperiodicity, numInds);
       const f0s = this.duplicate(f0, numInds);
-      ret[type] = getAudioFn(WorldVocoder.float64To32(this.world.Synthesis(f0s, spectra, aperioda, this.fft_size, this.sampleRate, WorldVocoder.worldJSSpeed)));
+      ret[type] = getAudioFn(WorldVocoder.float64To32(this.world.Synthesis(f0s, spectra, aperioda, this.fft_size, this.sampleRate, speed)));
     }
     this.ready = true;
     callback(ret);
