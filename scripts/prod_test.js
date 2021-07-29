@@ -39,18 +39,18 @@ class ProdTest {
     doc.create('label','.', descDiv);
     this.descLabel = doc.create('p',null, descDiv);
 
-    let pb = definePlayback(doc, this.recordTime, null, 
+    const pb = new Playback(doc, this.recordTime, null,
       function() {that.busy()}, 
       function(buffer) {that.recorded(buffer)},
       function() {that.played()},
       function() {return that.share.get('micGain')});
-    this.resetPb = pb['reset'];
-    this.offPb = pb['off'];
+    this.resetPb = function() {pb.reset()};
+    this.offPb = function() {pb.off()};
 
     let buttonDiv = doc.create('div',null,this.testDiv);
     buttonDiv.style.width = this.buttonBarWidth + 'px';
     for(const key of ['record','playback']) {
-      let button = pb[key];
+      let button = pb.get(key);
       this.buttons[key] = button;
       button.style.width = (100/2).toFixed(2) + '%';
       buttonDiv.appendChild(button)

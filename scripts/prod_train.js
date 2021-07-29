@@ -101,6 +101,8 @@ class ProdTrain {
     
     this.adjustAudioDiv = doc.create('div',null, div);
     this.adjustLabel = doc.create('h3',null,this.adjustAudioDiv);
+    doc.create('hr',null,this.adjustedAudioDiv);
+    this.adjustJoke = doc.create('p',null,this.adjustAudioDiv);
 
     let trainDiv = doc.create('div',null,div);
 
@@ -442,15 +444,17 @@ class ProdTrain {
 
   adjustAudio() {
     const that = this;
+    const jokes = shuffleArray(Jokes.jokes);
 
     this.trainDiv.style.display = 'none'
     this.adjustAudioDiv.style.display = 'block';
-    this.adjustLabel.innerHTML = 'asdf';
+    this.adjustLabel.innerHTML = '';
     const chars = this.stimuli.map((a) => { return {syl: a['syl'], tone: a['tone']}});
     var idx = 0;
     this.adjustedAudio = {};
     let loadAudio = function() {
       that.adjustLabel.innerHTML = 'Adjusting syllable ' + (idx + 1) + '/' + chars.length + '...';
+      that.adjustJoke.innerHTML = jokes[idx % jokes.length];
       that.vocoder.loadCharacter(chars[idx]['syl'], chars[idx]['tone'], function(ret) {
         that.adjustedAudio[chars[idx]['syl']] = ret;
         idx += 1;
