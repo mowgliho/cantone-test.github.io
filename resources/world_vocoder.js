@@ -62,7 +62,7 @@ class WorldVocoder {
 
     const that = this;
 
-    const speed = WorldVocoder.charExceptions.includes(char)? WorldVocoder.worldJSSpeed/4: WorldVocoder.worldJSSpeed;
+    const speed = WorldVocoder.charExceptions.includes(char)? 2: WorldVocoder.worldJSSpeed;
 
     this.ready = false;
 
