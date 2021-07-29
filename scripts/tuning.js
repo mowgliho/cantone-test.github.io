@@ -3,7 +3,6 @@ class Tuning {
   static smoothThreshold = 10;
   static width = 100;
   static height = 500;
-  static canvasHeightSd = 6;//6 sds tall
   static margin = 0.05;
   static closeTune = 0.05;
 
@@ -50,8 +49,8 @@ class Tuning {
     this.state = 'ready';
     this.mean = mean;
     this.target = mean + z*sd;
-    this.sdHeight = Tuning.canvasHeightSd * sd;
-    this.line = 0.5 + z/Tuning.canvasHeightSd;
+    this.sdHeight = Config.canvasHeightSd * sd;
+    this.line = 0.5 + z/Config.canvasHeightSd;
     this.z = z;
     this.attempt = null;
     this.tunedFlag = false;

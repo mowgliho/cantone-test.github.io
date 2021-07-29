@@ -69,7 +69,7 @@ class ToneContours {
       const maxY = contours.reduce((a,contour) => Math.max(a, contour.reduce((b,c) => Math.max(b,c[1]),0)),0)
       const minY = contours.reduce((a,contour) => Math.min(a, contour.reduce((b,c) => Math.min(b,c[1]),0)),0)
       let x = (t) => (ToneContours.margin/2 + (t/maxT)*(1-ToneContours.margin - textSize/canvas.width))*canvas.width;
-      let y = (st) => (1-(0.5 + (st)/(ToneContours.canvasHeightSd)))*canvas.height;
+      let y = (st) => (1-(0.5 + (st)/(Config.canvasHeightSd)))*canvas.height;
       for(var i = 0; i < ToneContours.tones.length; i++) {
         let t = ToneContours.tones[i];
         let contour = contours[i];
@@ -118,7 +118,6 @@ class ToneContours {
 
   //from looking at humanum data
   static humanumMean = 38.1//in semitones
-  static canvasHeightSd = 6;
 
   static humanumTuneSts = {
     start:{'1':45, '2':35,'3':40,'4':37,'5':34,'6':37},
