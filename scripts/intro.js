@@ -35,10 +35,10 @@ class Intro {
     let gain = this.share.get('micGain'); 
     if(gain == null) this.share.save('micGain',1);
     let volFn = function() {return that.share.get('micGain');};
-    let pb = definePlayback(doc, this.micDuration, null, function() {}, function() {}, function() {}, volFn)
+    let pb = new Playback(doc, this.micDuration, null, function() {}, function() {}, function() {}, volFn);
     doc.create('label', 'Now, click the "Record" button, allow access to your microphone, and say something within ' + this.micDuration + ' seconds. You should be able to play what you recorded with the "Play Attempt" button and to adjust playback volume with the "Up" and "Down" buttons ',micLi);
-    micLi.appendChild(pb['record']);
-    micLi.appendChild(pb['playback']);
+    micLi.appendChild(pb.get('record'));
+    micLi.appendChild(pb.get('playback'));
     getVolButtons(doc, this.share, micLi);
 
     //next
