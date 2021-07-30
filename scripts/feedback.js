@@ -4,7 +4,7 @@ class Feedback {
 
   questions = [
     {text: 'How was your experience learning Cantonese tones?', audio: null, visual: null},
-    {text: 'Did you find some tones easier to learn than others?', audio: null, visual: null},
+    {text: 'Did you find some tones easier to learn than others? If so, which ones and why?', audio: null, visual: null},
     {text: 'Which was easier, perception or production? Why?', audio: null, visual: null},
     {text: 'How did you find the matching game for learning tones?', audio: null, visual: null},
     {text: 'How helpful were the provided tone charts?', audio: null, visual: ['idealized','data']},
