@@ -208,19 +208,22 @@ class MicTest {
     const that = this;
 
     const id = this.share.get('id');
-    const filename = 'mic_test.tsv';
+    const contourFn = 'mic_test_contour.tsv';
+    const refFn = 'mic_test_ref.tsv';
+    var contourText = 'round\ttime\tst\ttarget\n';
+    var refText = 'round\tst\tz\n'
     var text = '';
     for(var contour of this.attemptContours) {
-      text += 'New Contour:\n';
-      text += [contour['id'],contour['mean'].toFixed(3),contour['z'].toFixed(3)].join('\t') + '\n';
-      text += 'time\tst\ttarget\n';
+      refText += [contour['id'],contour['mean'].toFixed(3),contour['z'].toFixed(3)].join('\t') + '\n';
       for(var row of contour['contour']) {
-        text += row.join('\t') + '\n';
+        contourText += contour['id'] + '\t' + row.join('\t') + '\n';
       }
-      text += '\n';
     }
 
-    uploadPlainTextFile(id, filename, text, false, function() {
+    uploadPlainTextFiles(id, [
+      {filename: refFn, text: refText, append: false},
+      {filename: contourFn, text: contourText, append: false}
+    ], function() {
       const filename = 'info.txt';
       var text = '';
       for(const x of ['ambientDbfs','st']) text += x + '\t' + that.share.get(x) + '\n';
