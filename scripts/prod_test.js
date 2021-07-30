@@ -154,7 +154,7 @@ class ProdTest {
 
   finish() {
     const that = this;
-    uploadProgress(this.share.get('id'), 'prod_train','completed', function() { that.manager.next();});
+    uploadProgress(this.share.get('id'), 'prod_test','completed', function() { that.manager.next();});
   }
 
   start(){};
