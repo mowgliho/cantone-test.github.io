@@ -96,7 +96,8 @@ class MicTest {
 
     let calc = function() {
       analyzer.getFloatTimeDomainData(data);
-      vols.push(Math.sqrt(data.reduce((a, x) => a + x**2)/data.length));
+      let filtered = data.filter((a) => (typeof a == 'number' && !isNaN(a)))
+      if(filtered.length > 0) vols.push(Math.sqrt(filtered.reduce((a, x) => a + x**2)/filtered.length));
     }
 
     this.share.addTimeout(setInterval(calc, that.measurementInterval));
@@ -107,15 +108,9 @@ class MicTest {
     this.share.clearTimeouts();
     let dbfs = 20*Math.log10(Math.sqrt(vols.reduce((a,b) => a + b**2,0)/vols.length));
     dbfs = Math.max(dbfs, this.minDbfs);
-    if(dbfs < this.maxDbfs) {
-      this.share.save('ambientDbfs',dbfs);
-      this.ambientDiv.style.display = 'none';
-      this.calibDiv.style.display = 'block';
-    } else {
-      this.ambientLabel.style.color = 'red';
-      this.ambientLabel.innerHTML = ' Too much noise detected. Please try again or find a quieter place.';
-      button.disabled = false;
-    }
+    this.share.save('ambientDbfs',dbfs);
+    this.ambientDiv.style.display = 'none';
+    this.calibDiv.style.display = 'block';
   }
 
   calibrate(audioContext, stream, button) {
