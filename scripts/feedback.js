@@ -13,7 +13,8 @@ class Feedback {
     {text: 'How did you find the audio snippets that were adjusted to your vocal range?', audio: 'vocoded', visual: null},
     {text: 'Did you have issues with the system recognizing the contours that you produced?', audio: 'vocoded', visual: ['idealized','data']},
     {text: 'Do you feel that you had enough time to learn Cantonese tones?', audio: null, visual: null},
-    {text: 'What other comments/feedback do you have?', audio: null, visual: null}
+    {text: 'What other comments/feedback do you have?', audio: null, visual: null},
+    {text: 'Did you come across any bugs/errors?', audio: null, visual: null}
   ];
 
   constructor(manager, doc, div, audio, share, status) {
@@ -52,7 +53,7 @@ class Feedback {
 
   addQuestion(data, doc, parentDiv, question, qNumber) {
     const div = doc.create('div', null, parentDiv);
-    const label = doc.create('label', 'Question ' + qNumber + ': ' + question['text'], div);
+    const label = doc.create('p', 'Question ' + qNumber + ': ' + question['text'], div);
     const textarea = doc.create('textarea',null,div);
     textarea.style.width = this.boxWidth;
     textarea.style.height = this.boxHeight;

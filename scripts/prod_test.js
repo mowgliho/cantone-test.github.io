@@ -16,6 +16,7 @@ class ProdTest {
     doc.create('h2','Production Test',div);
     doc.create('hr',null,div);
     doc.create('p','As a final task, you will record yourself saying cantonese syllables. You will be provided with pronunciation for syllables (which rhyme with English words) as well as a tone.',div);
+    doc.create('p','We know that it\'s been quite a long experiment so far, but please take this part seriously and don\'t let experiment fatigue worsen your results!',div);
     doc.create('p','You will then record yourself saying the syllable. You can listen to your attempts and re-record if you wish.',div);
 
     this.stimuli = Stimuli.getProdTestStimuli();

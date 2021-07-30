@@ -77,7 +77,7 @@ class ProdTrain {
       let list = doc.create('ul',null,this.introDiv);
       doc.create('li','On the left, similar to the Mic Test, you will be able to match the starting and ending parts of each syllable. Each will play for a small amount of time. You can match the pitch afterwards. Try to make the lines match.', list);
       doc.create('li','On the right, you will see a tone chart with the target tone highlighted. Click "Try It" and attempt to say the syllable. A line should show up, representing your attempt. Again, try to make the lines/pitch contours match.', list);
-      doc.create('p', 'Also note that at the beginning of each round the buttons may not be available for a few seconds. This is due to the time it takes for the system to adjust audio files for your vocal range.',this.introDiv);
+      doc.create('p', 'As it takes for the system to adjust audio files for your vocal range, we\'ll adjust all the audio first. If the progress seems to stall, you can refresh the page to start the adjusting process again.',this.introDiv);
     }
     doc.create('p', 'Some rounds will be "test rounds", in which you will only be able to record and hear your attempts. This is to help you internalize the tone contours and not rely on other aids.', this.introDiv);
 
