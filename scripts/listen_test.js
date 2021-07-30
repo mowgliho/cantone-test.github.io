@@ -71,6 +71,7 @@ class ListenTest {
   }
 
   submit() {
+    this.submitButton.disabled = true;
     const that = this;
     
     this.clicks.push({round: this.idx, type: 'submit', time: (new Date()).getTime()});
