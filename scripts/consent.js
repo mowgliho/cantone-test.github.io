@@ -6,6 +6,7 @@ class Consent {
     'I agree that recordings of my voice can be shared with other researchers and used for teaching or research purposes (e.g., presentations and publications).',
     'I agree that recordings of my voice may be made publicly available for general use (e.g. used in radio or television broadcasts, or put on the world-wide web).',
     'I do not have a hearing impairment.'
+    'I do not speak a tonal language (A language where pitch differentiates between word meaning e.g. Chinese, Thai, Vietnamese, etc).'
   ];
 
   constructor(manager, doc, div, audio, share, status) {
